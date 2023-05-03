@@ -4,16 +4,16 @@
 	<br/>
 	<div><b>An experimental smart contract blockchain network</b></div>
 	<br/>
-	<a href="https://github.com/nguyenphuminh/DrissChain/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg"/></a>
-	<a href="https://github.com/nguyenphuminh/DrissChain/releases"><img src="https://img.shields.io/github/package-json/v/nguyenphuminh/DrissChain?label=stable"></a>
-	<a href="https://snyk.io/test/github/nguyenphuminh/DrissChain"><img src="https://snyk.io/test/github/nguyenphuminh/DrissChain/badge.svg"/></a>
-	<a href="https://github.com/nguyenphuminh/DrissChain/stargazers"><img src="https://img.shields.io/github/stars/nguyenphuminh/DrissChain?color=gold"></a>
-	<a href="https://github.com/nguyenphuminh/DrissChain/blob/main/.github/PULL_REQUEST_TEMPLATE.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+	<a href="https://github.com/godwnwaswa/drisschain/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg"/></a>
+	<a href="https://github.com/godwnwaswa/drisschain/releases"><img src="https://img.shields.io/github/package-json/v/godwnwaswa/drisschain?label=stable"></a>
+	<a href="https://snyk.io/test/github/godwnwaswa/drisschain"><img src="https://snyk.io/test/github/godwnwaswa/drisschain/badge.svg"/></a>
+	<a href="https://github.com/godwnwaswa/drisschain/stargazers"><img src="https://img.shields.io/github/stars/godwnwaswa/drisschain?color=gold"></a>
+	<a href="https://github.com/godwnwaswa/drisschain/blob/main/.github/PULL_REQUEST_TEMPLATE.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
 </div>
 
 ## What is DrissChain?
 
-DrissChain is a blockchain network platform that supports smart contracts and can act as a payment system/cryptocurrency. It is originally and still is made for experimental and educational purposes, you can have a brief look at its core ideas through its [**outdated** and unfinished whitepaper](https://nguyenphuminh.github.io/DrissChain-whitepaper.pdf).
+DrissChain is a blockchain network that supports smart contracts and can act as a payment system/cryptocurrency. It is the core execution layer of the RealDriss decentralized service.
 
 
 ## Setup a node
@@ -29,7 +29,7 @@ A system that is running Windows, Linux, or MacOS with a dual-core CPU and 8GB o
 
 ### Installation
 
-First, download the latest release from: https://github.com/nguyenphuminh/DrissChain/releases.
+First, download the latest release from: https://github.com/godwnwaswa/drisschain/releases.
 
 Extract the zip file, in the `DrissChain` folder, open up your terminal and install the required packages through `npm`:
 
@@ -65,15 +65,15 @@ In `config.json`, change the props for your needs:
 }
 ```
 
-To see an example, `config.json` already has some data set for you to have a look at.
+To see an example, `config.json` is already populated with sample data.
 
 ### Running the node
 
-After everything is all set, simply type `node .` to run the node.
+After everything configured, simply type `node .` to run the node.
 
 ### Interacting with the node through JSON-RPC apis
 
-This process will need you to run an RPC server, basically leave `true` in `ENABLE_RPC` in `config.json` to enable it.
+This process will need you to run an RPC server, leave `true` for `ENABLE_RPC` in `config.json` to enable it.
 
 To properly interact with the node, you should use the JSON-RPC apis, especially if you are creating dapps. To get started, check out [docs for JSON-RPC APIs here.](./JSON-RPC.md)
 
@@ -88,7 +88,7 @@ If you don't know how to forward port, just search it up online, each router mod
 
 ## Smart contracts?
 
-Smart contract is still a fairly new feature in DrissChain. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `jelscript`.
+Smart contract is still a fairly new feature in DrissChain. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `drisscript`.
 
 Remember to only use it for experimental purposes, I can not guarantee that this feature will be changed or not in the future. The language is also really limited and far from ready.
 
@@ -109,31 +109,17 @@ Note that this is an experimental project which is still under development, and 
 | MilliJelly | 1,000,000,000,000,000     |
 | Jelly      | 1,000,000,000,000,000,000 |
 
-### Tokenomic
+### Tokenomics
 
-* 100000000 Jelly is minted originally.
+* 100,000,000 Jelly is minted originally.
 * Current mining reward is 0.202297 Jelly.
-* Minimum transation fee is 1000000000000 Jem.
-* Minimum contract execution fee is 10000000 Jem. 
+* Minimum transation fee is 1,000,000,000,000 Jem.
+* Minimum contract execution fee is 10,000,000 Jem. 
 
-
-## Todos 
-
-To see a full list of todos for DrissChain, visit: https://github.com/nguyenphuminh/DrissChain/projects/3
-
-
-## Support the project!
-
-I have been maintaining the project in my free time, if you like DrissChain and want to support, you can just leave a star and feel free to open issues and pull requests!
-
-
-## Using the project's source code
-
-DrissChain is 100% open-source, but if you are integrating its source code into your own project, it would be lovely if you credit the original DrissChain, I would really appreciate it!
 
 
 ## Copyrights and License
 
-Copyrights © 2021 Nguyen Phu Minh.
+Copyrights © 2023 RealDriss.
 
 This project is licensed under the GPL 3.0 License.
