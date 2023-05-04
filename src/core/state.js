@@ -9,6 +9,54 @@ const Transaction = require("./transaction");
 
 const { EMPTY_HASH, BLOCK_REWARD } = require("../config.json");
 
+/**
+ * --------------------------------------------------------------------------------------------------------------
+ * Updates the blockchain's state according to the transactions included in a newly created block. It does so by 
+ * modifying the `stateDB` object, which represents the current state of the blockchain, and the `codeDB` object, 
+ * which represents the code of any smart contracts deployed on the blockchain. 
+ * --------------------------------------------------------------------------------------------------------------
+ * 
+ * --------------------------------------------------------------------------------------------------------------
+ * It 1st retrieves all the existing addresses in the blockchain's state database (`stateDB.keys().all()`), which  
+ * will be used to check whether new addresses need to be created. It then iterates over each transaction in the 
+ * new block and processes it according to its type (normal transfer or smart contract execution).
+ * --------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * If the recipient of the transaction is a new address that does not yet exist in the state database, a new empty 
+ * state object is created for that address. Similarly, if the sender's address does not yet exist in the state 
+ * database, a new empty state object is created for that address. 
+ * ---------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * If the transaction is a smart contract deployment, the function checks whether the sender has already deployed 
+ * a contract to that address. If not, it creates a new contract object and stores it in the `codeDB` object. 
+ * ---------------------------------------------------------------------------------------------------------------
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * If the transaction is a normal transfer, the function updates the state of the sender and recipient addresses 
+ * by subtracting or adding the transaction amount, gas fee, and any additional contract gas fee.
+ * ---------------------------------------------------------------------------------------------------------------
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * If the recipient of the transaction has a code hash associated with it (i.e., a smart contract is deployed at 
+ * that address), the function executes the contract code using the `jelscript` function, passing in the contract 
+ * code, the current state database, the new block, the transaction, and some additional information about the 
+ * contract.
+ * ---------------------------------------------------------------------------------------------------------------
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * After all transactions in the new block have been processed, the function calculates the block reward and adds 
+ * it to the balance of the block's miner (i.e., the coinbase address). If the coinbase address does not exist in 
+ * the state database, a new state object is created for it.
+ * ---------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * 
+
+ * */
 async function changeState(newBlock, stateDB, codeDB, enableLogging = false) { // Manually change state
     const existedAddresses = await stateDB.keys().all();
 
