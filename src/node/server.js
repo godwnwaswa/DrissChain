@@ -43,16 +43,89 @@ const blockDB = new Level(__dirname + "/../log/blockStore", { valueEncoding: "js
 const bhashDB = new Level(__dirname + "/../log/bhashStore");
 const codeDB = new Level(__dirname + "/../log/codeStore");
 
+
+/**
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * Starts a WebSocket server with some configuration options. 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * WebSocket is a protocol that enables real-time, two-way communication between the server and client. This function is used to 
+ * implement a peer-to-peer (P2P) network of nodes in a blockchain application.The P2P network consists of nodes that communicate with 
+ * each other, share the latest blockchain data, validate transactions, and  mine new blocks.
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * a. `PORT`: The port number on which the WebSocket server will listen. Default is 3000.
+ * b. `RPC_PORT`: The port number on which the RPC server will listen. Default is 5000.
+ * c. `PEERS`: An array of WebSocket addresses of other nodes to connect to.
+ * d. `MAX_PEERS`: The maximum number of peers that can be connected at the same time. Default is 10.
+ * e. `MY_ADDRESS`: The WebSocket address of the current node. Default is `ws://localhost:3000`.
+ * f. `ENABLE_MINING`: A boolean flag indicating whether mining is enabled or not. Default is false.
+ * g. `ENABLE_LOGGING`: A boolean flag indicating whether logging is enabled or not. Default is false.
+ * h. `ENABLE_RPC`: A boolean flag indicating whether the RPC server is enabled or not. Default is false.
+ * i. `ENABLE_CHAIN_REQUEST`: A boolean flag indicating whether the node is syncing with the blockchain or not. Default is false.
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * Generates a private key, a key pair, and a public key using the elliptic curve cryptography (EC) library. It sets 
+ * up an error handler to catch any uncaught exceptions and logs them to the console. It also stores an empty string with an empty hash
+ * in the code database.
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * Creates a WebSocket server using the `ws` library, listens on the specified port, and logs a message to the console indicating that 
+ * the server is listening. It then sets up a connection event handler for the server. When a client connects to the server, the 
+ * connection event is emitted, and the handler function is executed. 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * Inside the connection event handler, the function sets up a message event handler for the socket, which listens for incoming 
+ * messages. When a message is received, it is parsed from binary to JSON format using the `parseJSON` function. The parsed message is 
+ * then processed based on its `type` property.
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * ------------------------------------------------------------------------------------------------------------------------------------
+ * There are 3 message types handled in the function:
+ * 
+ * 1. `TYPE.NEW_BLOCK`: 
+ * 
+ * This message is sent when a new block is received by a node. The function checks if the block's parent hash is the same as the latest 
+ * block's hash. If it is, the block is discarded as a duplicate. If it is not, the function verifies the block using the `verifyBlock` 
+ * function and updates the blockchain, transaction pool, and chain info if the block is valid. If mining is enabled, the mined flag is 
+ * set to true, and the worker thread is killed and restarted. Finally, the block is broadcast to other nodes using the `sendMessage` 
+ * function.
+ * 
+ * 
+ * 2. `TYPE.CREATE_TRANSACTION`: 
+ * 
+ * This message is sent when a new transaction is received by a node. The function verifies the transaction using the `Transaction.isValid` 
+ * function and adds it to the transaction pool. The transaction is then broadcast to other nodes using the `sendMessage` function.
+ * 
+ * 3. `TYPE.REQUEST`: 
+ * 
+ * This message is sent when a node requests blockchain data from another node. The function sends the requested data 
+ * back to the requester using the `sendMessage` function.
+ * ----------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * --------------------------------------------------------------------------------------------------------------------------------------
+ * The function ends with no return statement, as it is an asynchronous function that starts a server and waits for incoming connections 
+ * and messages.
+ * --------------------------------------------------------------------------------------------------------------------------------------
+ * 
+ * */
 async function startServer(options) {
-    const PORT                 = options.PORT || 3000;                        // Node's PORT
-    const RPC_PORT             = options.RPC_PORT || 5000;                    // RPC server's PORT
-    const PEERS                = options.PEERS || [];                         // Peers to connect to
-    const MAX_PEERS            = options.MAX_PEERS || 10                      // Maximum number of peers to connect to
-    const MY_ADDRESS           = options.MY_ADDRESS || "ws://localhost:3000"; // Node's address
-    const ENABLE_MINING        = options.ENABLE_MINING ? true : false;        // Enable mining?
-    const ENABLE_LOGGING       = options.ENABLE_LOGGING ? true : false;       // Enable logging?
-    const ENABLE_RPC           = options.ENABLE_RPC ? true : false;           // Enable RPC server?
-    let   ENABLE_CHAIN_REQUEST = options.ENABLE_CHAIN_REQUEST ? true : false; // Enable chain sync request?
+    const PORT                 = options.PORT || 3000;                        
+    const RPC_PORT             = options.RPC_PORT || 5000;                    
+    const PEERS                = options.PEERS || [];                         
+    const MAX_PEERS            = options.MAX_PEERS || 10                      
+    const MY_ADDRESS           = options.MY_ADDRESS || "ws://localhost:3000"; 
+    const ENABLE_MINING        = options.ENABLE_MINING ? true : false;        
+    const ENABLE_LOGGING       = options.ENABLE_LOGGING ? true : false;       
+    const ENABLE_RPC           = options.ENABLE_RPC ? true : false;           
+    let   ENABLE_CHAIN_REQUEST = options.ENABLE_CHAIN_REQUEST ? true : false; 
 
     const privateKey = options.PRIVATE_KEY || ec.genKeyPair().getPrivate("hex");
     const keyPair = ec.keyFromPrivate(privateKey, "hex");
@@ -296,21 +369,44 @@ async function startServer(options) {
     if (ENABLE_RPC) rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTransaction, keyPair, stateDB, blockDB, bhashDB, codeDB);
 }
 
-// Function to connect to a node.
+/**
+ * Connects to a WebSocket server at the specified address.
+ * 
+ * */
 function connect(MY_ADDRESS, address) {
+    /**
+     * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
+     * 
+     * */
     if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
-        const socket = new WS(address); // Get address's socket.
+        /**
+         * Create a new WebSocket object with the specified `address`.
+         * 
+         * */
+        const socket = new WS(address); 
 
-        // Open a connection to the socket.
+        /**
+         * Open a connection to the socket and send a handshake message to all connected nodes.
+         * 
+         * */
         socket.on("open", async () => {
             for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMessage(TYPE.HANDSHAKE, _address));
             for (const node of opened) node.socket.send(produceMessage(TYPE.HANDSHAKE, address));
 
-            // If the address already existed in "connected" or "opened", we will not push, preventing duplications.
+            /**
+             * Check if the `address` is not already in the `opened` array and if it is not equal to `MY_ADDRESS`.
+             * This is to prevent address redundancy.
+             * 
+             * */
             if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) {
                 opened.push({ socket, address });
             }
 
+            /**
+             * Push the `address` into the `connected` array, increment the `connectedNodes` counter, 
+             * and log a message to the console.
+             * 
+             * */
             if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
                 connected.push(address);
 
@@ -318,7 +414,13 @@ function connect(MY_ADDRESS, address) {
 
                 console.log(`LOG :: Connected to ${address}.`);
 
-                // Listen for disconnection, will remove them from "opened" and "connected".
+                /**
+                 * Listen for the "close" event on the socket and remove the `address` from the `opened` and `connected` arrays.
+                 * 
+                 * The `indexOf` method is used to find the index of the `address` in the arrays, 
+                 * and the `splice` method is used to remove it.
+                 * 
+                 * */
                 socket.on("close", () => {
                     opened.splice(connected.indexOf(address), 1);
                     connected.splice(connected.indexOf(address), 1);
@@ -329,6 +431,9 @@ function connect(MY_ADDRESS, address) {
         });
     }
 
+    /**
+     * Return `true` to indicate that the connection was successful.
+     * */
     return true;
 }
 
