@@ -86,7 +86,7 @@ Just do some port-forwarding, drop your public IP + the port you forwarded in an
 If you don't know how to forward port, just search it up online, each router model should have its own way to do port-forwarding.
 
 
-## Smart contracts?
+## Smart contracts
 
 Smart contract is still a fairly new feature in DrissChain. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `drisscript`.
 
