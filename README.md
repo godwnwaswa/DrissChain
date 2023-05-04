@@ -11,9 +11,9 @@
 	<a href="https://github.com/godwnwaswa/drisschain/blob/main/.github/PULL_REQUEST_TEMPLATE.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
 </div>
 
-## What is DrissChain?
+## What is Drisschain?
 
-DrissChain is a blockchain network that supports smart contracts and can act as a payment system/cryptocurrency. It is the core execution layer of the RealDriss decentralized service.
+Drisschain is a blockchain network that supports smart contracts and can act as a payment system/cryptocurrency. It is the core execution layer of the RealDriss decentralized service.
 
 
 ## Setup a node
@@ -31,7 +31,7 @@ A system that is running Windows, Linux, or MacOS with a dual-core CPU and 8GB o
 
 First, download the latest release from: https://github.com/godwnwaswa/drisschain/releases.
 
-Extract the zip file, in the `DrissChain` folder, open up your terminal and install the required packages through `npm`:
+Extract the zip file, in the `Drisschain` folder, open up your terminal and install the required packages through `npm`:
 
 ```
 npm install
@@ -39,7 +39,7 @@ npm install
 
 ### Generate your keys
 
-If you haven't had a DrissChain key pair before, hop over to `./utils/`, on the command line, type:
+If you haven't had a Drisschain key pair before, hop over to `./utils/`, on the command line, type:
 
 ```
 node keygen.js
@@ -79,7 +79,7 @@ To properly interact with the node, you should use the JSON-RPC apis, especially
 
 **Note: This feature is still in its early stages, things might change when a stable release is ready.**
 
-### Run DrissChain node publicly
+### Run Drisschain node publicly
 
 Just do some port-forwarding, drop your public IP + the port you forwarded in and you are set!
 
@@ -88,14 +88,14 @@ If you don't know how to forward port, just search it up online, each router mod
 
 ## Smart contracts
 
-Smart contract is still a fairly new feature in DrissChain. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `drisscript`.
+Smart contract is still a fairly new feature in Drisschain. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `drisscript`.
 
 Remember to only use it for experimental purposes, I can not guarantee that this feature will be changed or not in the future. The language is also really limited and far from ready.
 
 
 ## Economy 
 
-Note that this is an experimental project which is still under development, and an agreed DrissChain network hasn't been formed yet, so this section is mainly just for fun.
+Note that this is an experimental project which is still under development, and an agreed Drisschain network hasn't been formed yet, so this section is mainly just for fun.
 
 ### Units
 
