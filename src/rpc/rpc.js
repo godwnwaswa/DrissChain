@@ -30,17 +30,17 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
         }
 
         switch (req.params.option) {
-            case "get_blockNumber":
+            case "getBlockNumber":
                 respond({ blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) });
                 
                 break;
             
-            case "get_address":
+            case "getAddress":
                 respond({ address: client.publicKey });
 
                 break;
             
-            case "get_work":
+            case "getWork":
                 const latestBlock = await blockDB.get( Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString() );
 
                 respond({
@@ -80,7 +80,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
         switch (req.params.option) {
 
-            case "get_blockByHash":
+            case "getBlockByHash":
                 if (typeof req.body.params !== "object" || typeof req.body.params.hash !== "string") {
                     throwError("Invalid request.");
                 } else {
@@ -98,7 +98,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
 
-            case "get_blockByNumber":
+            case "getBlockByNumber":
                 if (typeof req.body.params !== "object" || typeof req.body.params.blockNumber !== "number") {
                     throwError("Invalid request.");
                 } else {
@@ -115,7 +115,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
 
-            case "get_blockTransactionCountByHash":
+            case "getBlockTxnCountByHash":
                 if (typeof req.body.params !== "object" || typeof req.body.params.hash !== "string") {
                     throwError("Invalid request.", 400);
                 } else {
@@ -133,7 +133,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
 
-            case "get_blockTransactionCountByNumber":
+            case "getBlockTxnCountByNumber":
                 if (typeof req.body.params !== "object" || typeof req.body.params.blockNumber !== "number") {
                     throwError("Invalid request.", 400);
                 } else {
@@ -150,7 +150,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
                 break;
             
-            case "get_balance":
+            case "getBalance":
                 if (
                     typeof req.body.params !== "object"            ||
                     typeof req.body.params.address !== "string"    ||
@@ -166,7 +166,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
            
-            case "get_code":
+            case "getCode":
                 if (
                     typeof req.body.params !== "object"            ||
                     typeof req.body.params.codeHash !== "string"    ||
@@ -179,7 +179,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
 
-            case "get_codeHash":
+            case "getCodeHash":
                     if (
                         typeof req.body.params !== "object"            ||
                         typeof req.body.params.address !== "string"    ||
@@ -194,7 +194,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                     
                     break;
             
-            case "get_storage":
+            case "getStorage":
                 if (
                     typeof req.body.params !== "object"            ||
                     typeof req.body.params.address !== "string"    ||
@@ -212,7 +212,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
             
-            case "get_storageKeys":
+            case "getStorageKeys":
                 if (
                     typeof req.body.params.address !== "string"    ||
                     !(await stateDB.keys().all()).includes(req.body.params.address)
@@ -226,7 +226,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
             
-            case "get_storageRoot":
+            case "getStorageRoot":
                 if (
                     typeof req.body.params.address !== "string"    ||
                     !(await stateDB.keys().all()).includes(req.body.params.address)
@@ -238,7 +238,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
                 
                 break;
             
-            case "get_transactionByBlockNumberAndIndex":
+            case "getTxnByBlockNumberAndIndex":
                 if (
                     typeof req.body.params !== "object" ||
                     typeof req.body.params.blockNumber !== "number" ||
@@ -263,7 +263,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
                 break;
 
-            case "get_transactionByBlockHashAndIndex":
+            case "getTxnByBlockHashAndIndex":
                 if (
                     typeof req.body.params !== "object" ||
                     typeof req.body.params.hash !== "string" ||
@@ -289,7 +289,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
                 break;
 
-            case "sendTransaction":
+            case "sendTxn":
                 if (
                     typeof req.body.params !== "object" ||
                     typeof req.body.params.transaction !== "object"
@@ -303,7 +303,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
                 break;
             
-            case "signTransaction":
+            case "signTxn":
                 if (
                     typeof req.body.params !== "object" ||
                     typeof req.body.params.transaction !== "object"
