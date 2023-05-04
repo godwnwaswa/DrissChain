@@ -1,5 +1,36 @@
-// Bad RPC server implementation, will be updated soon.
-
+/**
+ * Implements a server for an RPC (Remote Procedure Call) interface. The server exposes a set of functions 
+ * that can be called remotely by a client that connects to it through the internet.
+ * 
+ * 
+ * The server is implemented using the fastify framework, which is a lightweight and highly performant web 
+ * framework for Node.js.
+ * 
+ * 
+ * ----------------------------------------------------------------------------------------------------------------------
+ * The `rpc` function creates an instance of the fastify server, defines several routes, and handles the requests 
+ * that come through those routes. Specifically, there are four routes defined using the `fastify.get` and `fastify.post` 
+ * methods, which handle requests with GET and POST HTTP methods, respectively. 
+ * ----------------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * ---------------------------------------------------------------------------------------------------------------------------------------
+ * The routes handle different types of requests, which correspond to the different functions that can be called remotely by a client. 
+ * These functions include:
+ * 
+ * a. `getBlockNumber`: Returns the number of the latest block in the blockchain.
+ * b. `getAddress`: Returns the public key of the client that is connected to the server.
+ * c. `getWork`: Returns the hash and nonce of the latest block in the blockchain.
+ * d. `mining`: Returns a boolean value indicating whether the client is currently mining.
+ * e. `getBlockByHash`: Returns the block with the specified hash.
+ * f. `getBlockByNumber`: Returns the block with the specified block number.
+ * g. `getBlockTxnCountByHash`: Returns the number of transactions in the block with the specified hash.
+ * h. `getBlockTxnCountByNumber`: Returns the number of transactions in the block with the specified block number.
+ * i. `getBalance`: Returns the balance of the account with the specified address.
+ * j. `getCode`: Returns the code of the contract with the specified code hash.
+ * k. `getCodeHash`: Returns the code hash of the contract deployed at the specified address.
+ * ---------------------------------------------------------------------------------------------------------------------------------------
+ * */
 "use strict";
 
 const Transaction = require("../core/transaction");
