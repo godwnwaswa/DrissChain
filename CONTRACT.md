@@ -1,27 +1,27 @@
-## What are smart contracts?
+## What is a smart contract?
 
-Smart contracts are basically pieces of code that are attached to an address. They get called every time someone create a transaction pointing to their contract address. Remember that smart contracts can only be deployed once with each address, bringing immutability.
+A smart contract is a piece of code that is attached to an address. It gets called every time someone creates a transaction pointing to its address. It can only be deployed once with each address, bringing immutability.
 
-## Using Jelscript to create smart contracts
+## Using Drisscript to create smart contracts
 
-Jelscript is basically a small low-level language used to create smart contracts on JeChain.
+Drisscript is a minimal low-level language used to create smart contracts on Drisschain.
 
 ### Gas
 
-For every instructions, you will lose 10000000 Jem, preventing infinite loops.
+For every instruction, you will lose 10,000,000 Jem, protecting against infinite loops.
 
 ### Data types
 
-There is no "real" data type in JeChain. You can use numbers and words (string with no whitespace) and there is no proper string because you don't really need strings.
+There is no "real" data type in Drisschain. You can use numbers and words (a string with no whitespace) and there is no proper string because you don't really need strings.
 
 ### Variable declaration
 
-Declaring/setting a variable:
+Declaring a variable:
 ```
 set var_name, value
 ```
 
-You can use variables by simply add a `$` character before it:
+You can use variables by prefixing a `$` sign:
 ```
 set a, 100
 set b, $a
@@ -76,7 +76,7 @@ If `value` is equal to 1, it will jump to `label_name`.
 
 ### Storage
 
-Before we dig in, we need to know that a contract's storage is a key-value object.
+Before we dig deeper, we need to understand that a contract's storage is a key-value object.
 
 * Store into storage: `store key, value`.
 * Pull from storage and store it into a variable: `pull var_name, key`.
@@ -87,26 +87,26 @@ Arguments can be represented as `%0`, `%1`, `%2`,..., `%n`.
 
 ### Block data
 
-* Store block's timestamp into a variable: `timestamp var_name`.
-* Store block's number into a variable: `blocknumber var_name`.
-* Store block's hash into a variable: `blockhash var_name`.
-* Store block's difficulty into a variable: `difficulty var_name`.
+* Store block's timestamp to a variable: `timestamp var_name`.
+* Store block's number to a variable: `blocknumber var_name`.
+* Store block's hash to a variable: `blockhash var_name`.
+* Store block's difficulty to a variable: `difficulty var_name`.
 
 ### Transaction data
 
-* Store transaction's amount into a variable: `txvalue var_name`.
-* Store transaction's sender address into a variable: `txsender var_name`.
-* Store transaction's gas into a variable: `txgas var_name`.
-* Store transaction's contract execution gas into a variable: `txexecgas var_name`.
+* Store transaction's amount to a variable: `txvalue var_name`.
+* Store transaction's sender address to a variable: `txsender var_name`.
+* Store transaction's gas to a variable: `txgas var_name`.
+* Store transaction's contract execution gas to a variable: `txexecgas var_name`.
 
 ### Contract data
 
-* Store contract's address into a variable: `address var_name`.
-* Store contract's balance into a variable: `selfbalance var_name`.
+* Store contract's address to a variable: `address var_name`.
+* Store contract's balance to a variable: `selfbalance var_name`.
 
 ### Chain interactions
 
-* Store address's balance into a variable: `balance var_name, address`.
+* Store address's balance to a variable: `balance var_name, address`.
 * Send Jem to an address: `send address, amount`.
 
 ### Others
@@ -185,7 +185,7 @@ label fib
 
 ### Simple token
 
-This is an example of a simple token. It will release `297297297` tokens, and people can send tokens to each others.
+This is an example of a simple token. It will release `297,297,297` tokens, and people can send tokens to each other.
 ```
 pull contract_balance, insert_contract_address_here
 equ contract_balance, 0
