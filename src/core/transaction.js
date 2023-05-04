@@ -1,3 +1,12 @@
+/**
+ * ------------------------------------------------------------------------------------------------------
+ * BN => This module is used for arbitrary-precision integer arithmetic.
+ * ------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * 
+ * */
+
 "use strict";
 
 const BN = require("bn.js");
@@ -57,6 +66,16 @@ class Transaction {
         return ec.keyFromPublic(txSenderPubkey).getPublic("hex");
     }
 
+    /**
+     * ----------------------------------------------------------------------------------------------------------------------------
+     * The method first checks that the types of the properties of the `tx` object are valid, then tries to recover the public key 
+     * associated with the transaction's signature. If this fails, the method returns `false`. If the public key can be recovered, 
+     * the method computes the sender's address using the SHA256 hash of the sender's public key. If the state of the sender does 
+     * not exist, the method returns `false`. If the sender's address is associated with a contract, the method returns `false`. 
+     * Finally, the method checks that the sender has enough balance to pay for the transaction's cost and that the transaction's 
+     * amount is at least 0.
+     * -----------------------------------------------------------------------------------------------------------------------------
+     * */
     static async isValid(tx, stateDB) {
         // Check types from properties first.
     
