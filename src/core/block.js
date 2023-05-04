@@ -1,5 +1,48 @@
+/**
+ * Indicates that the JavaScript code should be executed in strict mode. 
+ * In strict mode, certain actions that were previously considered to 
+ * be “silent failures” are now treated as errors. 
+ * Also, it disallows certain actions, such as using undeclared
+ * variables, creating functions in non-function code, or 
+ * using `this` in a function that is not a method of an object.
+ * 
+ * */
 "use strict";
 
+/**
+ * ----------------------------------------------------------------------------------
+ * Level => is a lightweight key-value database library.
+ * This database is used in the application to store the state of the blockchain.
+ * ----------------------------------------------------------------------------------
+ * 
+ * -----------------------------------------------------------------------------------
+ * crypto => uses the `createHash` method to generate a hash value for a given
+ * message, and uses the `digest` method to output the hash value in hexadecimal format.
+ * -------------------------------------------------------------------------------------
+ * 
+ * ---------------------------------------------------------------------------------
+ * EC => a package that provides tools for working with elliptic curve cryptography. 
+ * It uses the `ec` object to create a new instance of the secp256k1 elliptic curve.
+ * ---------------------------------------------------------------------------------
+ * 
+ * ---------------------------------------------------------------------------------
+ * Transaction => represents a transaction on the blockchain
+ * ---------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------
+ * buildMerkleTree => builds a Merkle tree for a given set of transactions.
+ * ------------------------------------------------------------------------------------
+ * 
+ * ------------------------------------------------------------------------------------
+ * config.json => contains various constants used in the blockchain application, 
+ * such as the block reward, block gas limit, and empty hash value.
+ * ------------------------------------------------------------------------------------
+ * 
+ * ----------------------------------------------------------------------
+ * jelscript => used for executing smart contracts on the blockchain.
+ * ----------------------------------------------------------------------
+ * 
+ * */
 const { Level } = require('level');
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 const EC = require("elliptic").ec, ec = new EC("secp256k1");
@@ -24,6 +67,10 @@ class Block {
         this.hash         = Block.getHash(this);               // Hash of the block
     }
 
+    /**
+     * Generates a hash value for a given block instance by concatenating various 
+     * properties of the block and hashing the resulting string using SHA256.
+     * */
     static getHash(block) {
         // Convert every piece of data to string, merge and then hash
         return SHA256(
@@ -35,7 +82,9 @@ class Block {
             block.nonce.toString()
         );
     }
-
+    /**
+     * Checks if a given block instance has valid property types.
+     * */
     static hasValidPropTypes(block) {
         return (
             Array.isArray(block.transactions)     &&
@@ -48,7 +97,29 @@ class Block {
             typeof block.hash        === "string"
         )
     } 
-
+    /**
+     * --------------------------------------------------------------------------------
+     * Verifies the validity of the transactions in a given block and updates the state 
+     * of the blockchain accordingly.It loops through all the transactions in the block 
+     * and checks if each transaction is valid using the `isValid` method from the 
+     * `Transaction` class. If any transaction is invalid, the method returns `false`.
+     * --------------------------------------------------------------------------------
+     * 
+     * -----------------------------------------------------------------------------------
+     * Checks if the sender's address exists in the stateDB. If the sender's address 
+     * doesn't exist, it returns `false`. If the address exists, the method retrieves the 
+     * sender's state from the stateDB and checks if the sender's code hash is empty. 
+     * If it's not empty, the method returns `false`. Otherwise, it deducts the amount of 
+     * the transaction, gas, and contract gas from the sender's balance and updates the 
+     * sender's state.
+     * -----------------------------------------------------------------------------------
+     * 
+     * ------------------------------------------------------------------------------------
+     * If the transaction is a contract deployment, it sets the sender's code hash to the 
+     * hash of the smart contract body and adds the code to the `code` object. It then 
+     * updates the sender's nonce.
+     * ------------------------------------------------------------------------------------
+     * */
     static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
         for (const tx of block.transactions) {
             if (!(await Transaction.isValid(tx, stateDB))) return false;
