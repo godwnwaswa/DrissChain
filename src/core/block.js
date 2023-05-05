@@ -39,7 +39,7 @@
  * ------------------------------------------------------------------------------------
  * 
  * ----------------------------------------------------------------------
- * jelscript => used for executing smart contracts on the blockchain.
+ * drisscript => used for executing smart contracts on the blockchain.
  * ----------------------------------------------------------------------
  * 
  * */
@@ -49,7 +49,7 @@ const EC = require("elliptic").ec, ec = new EC("secp256k1");
 const Transaction = require("./transaction");
 const { buildMerkleTree } = require("./merkle");
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH } = require("../config.json");
-const jelscript = require("./runtime");
+const drisscript = require("./runtime");
 const { indexTxns } = require("../utils/utils");
 
 class Block {
@@ -185,7 +185,7 @@ class Block {
             if (states[tx.recipient].codeHash !== EMPTY_HASH) {
                 const contractInfo = { address: tx.recipient };
                 
-                const [ newState, newStorage ] = await jelscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging);
+                const [ newState, newStorage ] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging);
         
                 for (const account of Object.keys(newState)) {
                     states[account] = newState[account];
