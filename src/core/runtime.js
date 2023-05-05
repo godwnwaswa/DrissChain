@@ -52,7 +52,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
  * ------------------------------------------------------------------------------------------------------------- *
 
  * */
-async function jelscript(input, originalState = {}, gas, stateDB, block, txInfo, contractInfo, enableLogging = false) {
+async function drisscript(input, originalState = {}, gas, stateDB, block, txInfo, contractInfo, enableLogging = false) {
 	const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address);
 	
 	const instructions = input.trim().replace(/\t/g, "").split("\n").map(ins => ins.trim()).filter(ins => ins !== "");
@@ -397,4 +397,4 @@ async function jelscript(input, originalState = {}, gas, stateDB, block, txInfo,
 	return [ state, storage ];
 }
 
-module.exports = jelscript;
+module.exports = drisscript;
