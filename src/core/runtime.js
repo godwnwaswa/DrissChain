@@ -10,8 +10,8 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 /**
  
  * ------------------------------------------------------------------------------------------------------------- *
- * It processes the input instructions passed to it by splitting them into an array of individual commands,      *
- * removing any white space and empty lines.                                                                     *
+ * Processes the input instructions by splitting them into an array of individual commands, removing any white 
+ * spaces and empty lines.
  * ------------------------------------------------------------------------------------------------------------- *
  
 	KEY CODE EXPLANATION
