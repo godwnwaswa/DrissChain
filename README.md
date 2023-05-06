@@ -1,6 +1,6 @@
 <div align="center">
 	<br/>
-	<img src="./assets/extended-logo.png"/>
+	<img src="./assets/realdriss.svg"/>
 	<br/>
 	<div><b>An experimental smart contract blockchain network</b></div>
 	<br/>
