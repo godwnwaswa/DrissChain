@@ -1,6 +1,6 @@
 {
   "name": "drisschain",
-  "version": "1.0.0",
+  "version": "v1.0.0",
   "description": "Node for Drisschain - an experimental smart contract blockchain network",
   "main": "./index.js",
   "scripts": {
