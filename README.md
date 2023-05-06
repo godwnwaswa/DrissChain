@@ -2,7 +2,7 @@
 	<br/>
 	<img src="./assets/realdriss.svg"/>
 	<br/>
-	<div><b>An experimental smart contract blockchain network</b></div>
+	<div><b>The core execution layer of the RealDriss decentralized service.</b></div>
 	<br/>
 	<a href="https://github.com/godwnwaswa/drisschain/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg"/></a>
 	<a href="https://github.com/godwnwaswa/drisschain/releases"><img src="https://img.shields.io/github/package-json/v/godwnwaswa/drisschain?label=stable"></a>
@@ -13,7 +13,7 @@
 
 ## What is Drisschain?
 
-Drisschain is a blockchain network that supports smart contracts and can act as a payment system/cryptocurrency. It is the core execution layer of the RealDriss decentralized service.
+A smart contract blockchain network that powers RealDriss. RealDriss is a decentralized e-commerce marketplace for buyers and sellers to create, list and exchange products effortlessly.
 
 
 ## Setup a node
