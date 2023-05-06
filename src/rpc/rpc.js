@@ -38,6 +38,28 @@ const Transaction = require("../core/transaction");
 
 const fastify = require('fastify')();
 
+
+async function getBlockNumber()
+{
+  return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
+}
+
+function getAddress()
+{
+  return { address: client.publicKey }
+}
+
+async function getWork()
+{
+  const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString());   
+  return { hash: latestBlock.hash, nonce: latestBlock.nonce };
+}
+
+function mining()
+{
+  return { mining: client.mining };
+}
+
 // Returns the block with the specified hash.
 async function getBlockByHash(params) {
   if (typeof params !== "object" || typeof params._hash !== "string") {
@@ -352,20 +374,19 @@ async function handleJsonRpcRequest(request, reply) {
 
   switch (method) {
     case 'getBlockNumber':
-      result = { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) };
+      result = getBlockNumber();
       break;
 
     case 'getAddress':
-      result = { address: client.publicKey };
+      result = getAddress();
       break;
 
     case 'getWork':
-      const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString());
-      result = { hash: latestBlock.hash, nonce: latestBlock.nonce };
+      result = getWork();
       break;
 
     case 'mining':
-      result = { mining: client.mining };
+      result = mining();
       break;
 
     case 'getBlockByHash':
@@ -430,42 +451,50 @@ async function handleJsonRpcRequest(request, reply) {
   }
 
   const response = generateResponse(result, id);
+  console.log(response);
   return response;
 }
 
 
-function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashDB, codeDB)
-{
-    //a route for the JSON-RPC post endpoint
-    fastify.post('/jsonrpc', async (request, reply) => {
-      try {
-        const response = await handleJsonRpcRequest(request, reply);
-        return response;
-      } catch (error) {
-        return error;
-      }
-    });
+function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) {
+  const handleJsonRpcRequest = async (request, reply) => {
+    // Access the required parameters here, e.g.:
+    const { method, params, id } = request.body;
 
-    //a route for the JSON-RPC post endpoint
-    fastify.get('/jsonrpc', async (request, reply) => {
-      try {
-        const response = await handleJsonRpcRequest(request, reply);
-        return response;
-      } catch (error) {
-        return error;
-      }
-    });
+    // Call the transactionHandler function with the required parameters
+    const response = await transactionHandler(method, params, id);
 
-    // start the server
-    fastify.listen({ port: PORT }, (err) => {
-      if (err) {
-        console.error(err);
-        process.exit(1);
-      }
-      
-      console.log(`Server listening on http://localhost:${PORT}`);
-    });
+    // Return the response object
+    return {
+      jsonrpc: '2.0',
+      result: response,
+      id: id
+    };
+  };
 
+  // Define the Fastify server instance
+  const fastify = require('fastify')();
+
+  // Define the JSON-RPC endpoint route
+  fastify.post('/jsonrpc', async (request, reply) => {
+    try {
+      const response = await handleJsonRpcRequest(request, reply);
+      reply.status(200).send({response});
+    } catch (error) {
+      reply.status(400).send({ error });
+    }
+  });
+
+
+  // Start the server
+  fastify.listen({ port: PORT }, (err) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+    console.log(`Server listening on http://localhost:${PORT}`);
+  });
 }
+
 
 module.exports = rpc
