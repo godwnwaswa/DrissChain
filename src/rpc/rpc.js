@@ -352,7 +352,7 @@ async function handleJsonRpcRequest(request, reply) {
 
   switch (method) {
     case 'getBlockNumber':
-      result = getBlockByHash(params);
+      result = { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) };
       break;
 
     case 'getAddress':
