@@ -1,12 +1,12 @@
 {
-  "name": "jechain",
-  "version": "0.23.0",
-  "description": "Node for JeChain - an experimental smart contract blockchain network",
+  "name": "drisschain",
+  "version": "1.0.0",
+  "description": "Node for Drisschain - an experimental smart contract blockchain network",
   "main": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "nguyenphuminh",
+  "author": "Godwin Waswa",
   "license": "GPL-3.0",
   "dependencies": {
     "elliptic": "^6.5.4",
