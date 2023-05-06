@@ -44,24 +44,24 @@ async function getBlockNumber()
   return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
 }
 
-function getAddress()
+function getAddress(client)
 {
   return { address: client.publicKey }
 }
 
-async function getWork()
+async function getWork(blockDB)
 {
   const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString());   
   return { hash: latestBlock.hash, nonce: latestBlock.nonce };
 }
 
-function mining()
+function mining(client)
 {
   return { mining: client.mining };
 }
 
 // Returns the block with the specified hash.
-async function getBlockByHash(params) {
+async function getBlockByHash(params, bhashDB) {
   if (typeof params !== "object" || typeof params._hash !== "string") {
     return "Invalid request.";
   }
@@ -81,7 +81,7 @@ async function getBlockByHash(params) {
 
 
 // Returns the block with the specified block number
-async function getBlockByNumber(params) {
+async function getBlockByNumber(params, blockDB) {
   if (typeof params !== "object" || typeof params.blockNumber !== "number") {
     return "Invalid request.";
   }
@@ -101,7 +101,7 @@ async function getBlockByNumber(params) {
 
 
 // Returns the number of transactions in the block with the specified hash.
-async function getBlockTxnCountByHash(params) {
+async function getBlockTxnCountByHash(params, blockDB) {
   if (typeof params !== "object" || typeof params._hash !== "string") {
     return "Invalid request.";
   }
@@ -120,7 +120,7 @@ async function getBlockTxnCountByHash(params) {
 }
 
 // Returns the number of transactions in the block with the specified block number
-async function getBlockTxnCountByNumber(params) {
+async function getBlockTxnCountByNumber(params, blockDB) {
   const { blockNumber } = params;
 
   if (typeof params !== "object" || typeof blockNumber !== "number") {
@@ -157,7 +157,7 @@ async function getBalance(params) {
 }
 
 
-async function getCode(params) {
+async function getCode(params, codeDB) {
   const { codeHash } = params;
 
   if (
@@ -173,7 +173,7 @@ async function getCode(params) {
 
 
 
-async function getCodeHash(params)
+async function getCodeHash(params, stateDB)
 {
     const {address} = params;
     if (
@@ -192,7 +192,7 @@ async function getCodeHash(params)
     }
 }
 
-async function getStorage(params)
+async function getStorage(params, stateDB)
 {
     const {address, key} = params;
     if (
@@ -214,7 +214,7 @@ async function getStorage(params)
 }
 
 
-async function getStorageKeys(params)
+async function getStorageKeys(params, stateDB)
 {
     const {address} = params;
     if (
@@ -233,7 +233,7 @@ async function getStorageKeys(params)
 }
 
 
-async function getStorageRoot(params)
+async function getStorageRoot(params, stateDB)
 {
     const {address} = params;
     if (
@@ -250,7 +250,7 @@ async function getStorageRoot(params)
     }
 }
 
-async function getTxnByBlockNumberAndIndex(params)
+async function getTxnByBlockNumberAndIndex(params, blockDB)
 {
     const {index, blockNumber} = params;
     if (
@@ -286,7 +286,7 @@ async function getTxnByBlockNumberAndIndex(params)
 
 }
 
-async function getTxnByBlockHashAndIndex(params)
+async function getTxnByBlockHashAndIndex(params, bhashDB)
 {
     const {_hash, index} = params;
     if (
@@ -360,135 +360,123 @@ async function signTxn(params) {
 }
 
 
-
-//handles incoming JSON-RPC requests
-async function handleJsonRpcRequest(request, reply) {
-  const { method, params, id } = request.body;
-
-  function generateResponse(result, id)
-  {
-    return { jsonrpc: '2.0', result, id };
-  }
-
-  let result;
-
-  switch (method) {
-    case 'getBlockNumber':
-      result = getBlockNumber();
-      break;
-
-    case 'getAddress':
-      result = getAddress();
-      break;
-
-    case 'getWork':
-      result = getWork();
-      break;
-
-    case 'mining':
-      result = mining();
-      break;
-
-    case 'getBlockByHash':
-      result = getBlockByHash(params);
-      break;
-
-    case 'getBlockByNumber':
-      result = getBlockByNumber(params);
-      break;
-
-    case 'getBlockTxnCountByHash':
-      result = getBlockTxnCountByHash(params);
-      break;
-
-    case 'getBlockTxnCountByNumber':
-      result = getBlockTxnCountByNumber(params);
-      break;
-
-    case 'getBalance':
-      result = getBalance(params);
-      break;
-
-    case 'getCode':
-      result = getCode(params);
-      break;
-
-    case 'getCodeHash':
-      result = getCodeHash(params);
-      break;
-
-    case 'getStorage':
-      result = getStorage(params);
-      break;
-
-    case 'getStorageKeys':
-      result = getStorageKeys(params);
-      break;
-
-    case 'getStorageRoot':
-      result = getStorageRoot(params);
-      break;
-
-    case 'getTxnByBlockNumberAndIndex':
-      result = getTxnByBlockNumberAndIndex(params);
-      break;
-
-    case 'getTxnByBlockHashAndIndex':
-      result = getTxnByBlockHashAndIndex(params);
-      break;
-
-    case 'sendTxn':
-      result = sendTxn(params);
-      break;
-
-    case 'signTxn':
-      result = signTxn(params);
-      break;
-
-    default:
-      const error = { code: 404, message: 'Method not found.', id };
-      throw error;
-  }
-
-  const response = generateResponse(result, id);
-  console.log(response);
-  return response;
-}
-
-
 function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) {
+  //handles incoming JSON-RPC requests
   const handleJsonRpcRequest = async (request, reply) => {
-    // Access the required parameters here, e.g.:
     const { method, params, id } = request.body;
 
-    // Call the transactionHandler function with the required parameters
-    const response = await transactionHandler(method, params, id);
+    function generateResponse(result, id)
+    {
+      return { jsonrpc: '2.0', result: result, id: id };
+    }
 
-    // Return the response object
-    return {
-      jsonrpc: '2.0',
-      result: response,
-      id: id
-    };
-  };
+    let result;
 
-  // Define the Fastify server instance
-  const fastify = require('fastify')();
+    switch (method) {
+      case 'getBlockNumber':
+        result = getBlockNumber();
+        break;
+
+      case 'getAddress':
+        result = getAddress(client);
+        break;
+
+      case 'getWork':
+        result = getWork(blockDB);
+        break;
+
+      case 'mining':
+        result = mining();
+        break;
+
+      case 'getBlockByHash':
+        result = getBlockByHash(params);
+        break;
+
+      case 'getBlockByNumber':
+        result = getBlockByNumber(params);
+        break;
+
+      case 'getBlockTxnCountByHash':
+        result = getBlockTxnCountByHash(params);
+        break;
+
+      case 'getBlockTxnCountByNumber':
+        result = getBlockTxnCountByNumber(params);
+        break;
+
+      case 'getBalance':
+        result = getBalance(params);
+        break;
+
+      case 'getCode':
+        result = getCode(params);
+        break;
+
+      case 'getCodeHash':
+        result = getCodeHash(params);
+        break;
+
+      case 'getStorage':
+        result = getStorage(params);
+        break;
+
+      case 'getStorageKeys':
+        result = getStorageKeys(params);
+        break;
+
+      case 'getStorageRoot':
+        result = getStorageRoot(params);
+        break;
+
+      case 'getTxnByBlockNumberAndIndex':
+        result = getTxnByBlockNumberAndIndex(params);
+        break;
+
+      case 'getTxnByBlockHashAndIndex':
+        result = getTxnByBlockHashAndIndex(params);
+        break;
+
+      case 'sendTxn':
+        result = sendTxn(params);
+        break;
+
+      case 'signTxn':
+        result = signTxn(params);
+        break;
+
+      default:
+        result = 'Method not found.';
+    }
+    return generateResponse(result, id);
+  }
 
   // Define the JSON-RPC endpoint route
-  fastify.post('/jsonrpc', async (request, reply) => {
-    try {
-      const response = await handleJsonRpcRequest(request, reply);
-      reply.status(200).send({response});
-    } catch (error) {
-      reply.status(400).send({ error });
-    }
+  fastify.post('/jsonrpc', async (request, reply) => 
+  {
+  try 
+  {
+    const response = await handleJsonRpcRequest(request, reply);
+    return {
+      response
+    };
+  }
+  catch (error) 
+  {
+    return {
+      error: {
+        code: -32000,
+        message: 'JSON-RPC error: ' + error.message
+      }
+    };
+  }
   });
 
-
   // Start the server
-  fastify.listen({ port: PORT }, (err) => {
-    if (err) {
+  fastify.listen({ port: PORT }, (err) => 
+  {
+    if (err) 
+    {
       console.error(err);
       process.exit(1);
     }
