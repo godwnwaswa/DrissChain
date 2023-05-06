@@ -13,24 +13,6 @@
  * methods, which handle requests with GET and POST HTTP methods, respectively. 
  * ----------------------------------------------------------------------------------------------------------------------
  * 
- * 
- * ---------------------------------------------------------------------------------------------------------------------------------------
- * The routes handle different types of requests, which correspond to the different functions that can be called remotely by a client. 
- * These functions include:
- * 
- * a. `getBlockNumber`: Returns the number of the latest block in the blockchain.
- * b. `getAddress`: Returns the public key of the client that is connected to the server.
- * c. `getWork`: Returns the hash and nonce of the latest block in the blockchain.
- * d. `mining`: Returns a boolean value indicating whether the client is currently mining.
- * e. `getBlockByHash`: Returns the block with the specified hash.
- * f. `getBlockByNumber`: Returns the block with the specified block number.
- * g. `getBlockTxnCountByHash`: Returns the number of transactions in the block with the specified hash.
- * h. `getBlockTxnCountByNumber`: Returns the number of transactions in the block with the specified block number.
- * i. `getBalance`: Returns the balance of the account with the specified address.
- * j. `getCode`: Returns the code of the contract with the specified code hash.
- * k. `getCodeHash`: Returns the code hash of the contract deployed at the specified address.
- * ---------------------------------------------------------------------------------------------------------------------------------------
- * requires -- PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
  * */
 "use strict";
 
@@ -39,7 +21,7 @@ const Transaction = require("../core/transaction");
 const fastify = require('fastify')();
 
 
-async function getBlockNumber()
+async function getBlockNumber(blockDB)
 {
   return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
 }
@@ -61,13 +43,13 @@ function mining(client)
 }
 
 // Returns the block with the specified hash.
-async function getBlockByHash(params, bhashDB) {
+async function getBlockByHash(params, bhashDB, blockDB) {
   if (typeof params !== "object" || typeof params._hash !== "string") {
     return "Invalid request.";
   }
 
   const { _hash } = params;
-  const hashes = await bhashDB.keys.all();
+  const hashes = await bhashDB.keys().all();
   
   if (!hashes.includes(_hash)) {
     return "Invalid block hash.";
@@ -367,14 +349,14 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
 
     function generateResponse(result, id)
     {
-      return { jsonrpc: '2.0', result: result, id: id };
+      return { jsonrpc: '2.0', data: result, id: id };
     }
 
     let result;
 
     switch (method) {
       case 'getBlockNumber':
-        result = getBlockNumber();
+        result = await getBlockNumber(blockDB);
         break;
 
       case 'getAddress':
@@ -382,67 +364,67 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
         break;
 
       case 'getWork':
-        result = getWork(blockDB);
+        result = await getWork(blockDB);
         break;
 
       case 'mining':
-        result = mining();
+        result = mining(client);
         break;
 
       case 'getBlockByHash':
-        result = getBlockByHash(params);
+        result = await getBlockByHash(params, bhashDB, blockDB);
         break;
 
       case 'getBlockByNumber':
-        result = getBlockByNumber(params);
+        result = await getBlockByNumber(params);
         break;
 
       case 'getBlockTxnCountByHash':
-        result = getBlockTxnCountByHash(params);
+        result = await getBlockTxnCountByHash(params);
         break;
 
       case 'getBlockTxnCountByNumber':
-        result = getBlockTxnCountByNumber(params);
+        result = await getBlockTxnCountByNumber(params);
         break;
 
       case 'getBalance':
-        result = getBalance(params);
+        result = await getBalance(params);
         break;
 
       case 'getCode':
-        result = getCode(params);
+        result = await getCode(params);
         break;
 
       case 'getCodeHash':
-        result = getCodeHash(params);
+        result = await getCodeHash(params);
         break;
 
       case 'getStorage':
-        result = getStorage(params);
+        result = await getStorage(params);
         break;
 
       case 'getStorageKeys':
-        result = getStorageKeys(params);
+        result = await getStorageKeys(params);
         break;
 
       case 'getStorageRoot':
-        result = getStorageRoot(params);
+        result = await getStorageRoot(params);
         break;
 
       case 'getTxnByBlockNumberAndIndex':
-        result = getTxnByBlockNumberAndIndex(params);
+        result = await getTxnByBlockNumberAndIndex(params);
         break;
 
       case 'getTxnByBlockHashAndIndex':
-        result = getTxnByBlockHashAndIndex(params);
+        result = await getTxnByBlockHashAndIndex(params);
         break;
 
       case 'sendTxn':
-        result = sendTxn(params);
+        result = await sendTxn(params);
         break;
 
       case 'signTxn':
-        result = signTxn(params);
+        result = await signTxn(params);
         break;
 
       default:
