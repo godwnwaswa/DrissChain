@@ -305,7 +305,7 @@ async function getTxnByBlockHashAndIndex(params, bhashDB)
     }
 }
 
-async function sendTxn(params) {
+async function sendTxn(params, transactionHandler) {
   const { transaction } = params;
   if (
     typeof params !== "object" ||
@@ -324,7 +324,7 @@ async function sendTxn(params) {
 }
 
 
-async function signTxn(params) {
+async function signTxn(params, keyPair) {
     const { transaction } = params;
     if (
         typeof params !== "object" ||
@@ -376,7 +376,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
         break;
 
       case 'getBlockByNumber':
-        result = await getBlockByNumber(params);
+        result = await getBlockByNumber(params, blockDB);
         break;
 
       case 'getBlockTxnCountByHash':
