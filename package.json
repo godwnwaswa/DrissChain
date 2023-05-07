@@ -11,7 +11,9 @@
   "dependencies": {
     "elliptic": "^6.5.4",
     "fastify": "^3.29.0",
+    "fastify-swagger": "^5.2.0",
     "level": "^8.0.0",
+    "node-fetch": "^3.3.1",
     "ws": "^8.2.3"
   }
 }
