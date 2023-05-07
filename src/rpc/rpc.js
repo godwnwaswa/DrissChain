@@ -17,8 +17,21 @@
 "use strict";
 
 const Transaction = require("../core/transaction");
+const pino = require('pino');
 
-const fastify = require('fastify')();
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      translateTime: 'HH:MM:ss Z',
+      ignore: 'pid,hostname',
+    },
+  },
+});
+
+const fastify = require('fastify')({
+  logger : logger
+});
 
 
 async function getBlockNumber(blockDB)
@@ -462,7 +475,6 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
       console.error(err);
       process.exit(1);
     }
-    console.log(`Server listening on http://localhost:${PORT}`);
   });
 }
 
