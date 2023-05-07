@@ -43,6 +43,21 @@ const blockDB = new Level(__dirname + "/../log/blockStore", { valueEncoding: "js
 const bhashDB = new Level(__dirname + "/../log/bhashStore");
 const codeDB = new Level(__dirname + "/../log/codeStore");
 
+const pino = require('pino');
+
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      translateTime: 'HH:MM:ss Z',
+      ignore: 'pid,hostname',
+    },
+  },
+});
+
+const fastify = require('fastify')({
+  logger : logger
+});
 
 /**
  * ------------------------------------------------------------------------------------------------------------------------------------
@@ -131,13 +146,13 @@ async function startServer(options) {
     const keyPair = ec.keyFromPrivate(privateKey, "hex");
     const publicKey = keyPair.getPublic("hex");
 
-    process.on("uncaughtException", err => console.log("LOG ::", err));
+    process.on("uncaughtException", err => fastify.log.error(err));
 
     await codeDB.put(EMPTY_HASH, "");
 
     const server = new WS.Server({ port: PORT });
 
-    console.log("LOG :: Listening on PORT", PORT.toString());
+    fastify.log.info(`Listening on PORT ${PORT.toString()}`);
 
     server.on("connection", async (socket, req) => {
         // Message handler
@@ -168,7 +183,7 @@ async function startServer(options) {
                         chainInfo.checkedBlock[newBlock.hash] = true;
 
                         if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
-                            console.log("LOG :: New block received.");
+                            fastify.log.info("New block received.");
 
                             // If mining is enabled, we will set mined to true, informing that another node has mined before us.
                             if (ENABLE_MINING) {
@@ -189,7 +204,7 @@ async function startServer(options) {
                             // Update the new transaction pool (remove all the transactions that are no longer valid).
                             chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB);
 
-                            console.log(`LOG :: Block #${newBlock.blockNumber} synced, state transited.`);
+                            fastify.log.info(`Block #${newBlock.blockNumber} synced, state transited.`);
 
                             sendMessage(message, opened); // Broadcast block to other nodes
 
@@ -237,7 +252,7 @@ async function startServer(options) {
 
                     if (maxNonce + 1 !== transaction.nonce) return;
 
-                    console.log("LOG :: New transaction received, broadcasted and added to pool.");
+                    fastify.log.info("New transaction received, broadcasted and added to pool.");
 
                     chainInfo.transactionPool.push(transaction);
                     
@@ -259,7 +274,7 @@ async function startServer(options) {
 
                             socket.send(produceMessage(TYPE.SEND_BLOCK, block)); // Send block
                         
-                            console.log(`LOG :: Sent block at position ${blockNumber} to ${requestAddress}.`);
+                            fastify.log.info(`Sent block at position ${blockNumber} to ${requestAddress}.`);
                         }
                     }
     
@@ -289,7 +304,7 @@ async function startServer(options) {
 
                             await updateDifficulty(block, chainInfo, blockDB); // Update difficulty.
 
-                            console.log(`LOG :: Synced block at position ${block.blockNumber}.`);
+                            fastify.log.info(`Synced block at position ${block.blockNumber}.`);
 
                             // Continue requesting the next block
                             for (const node of opened) {
@@ -412,7 +427,7 @@ function connect(MY_ADDRESS, address) {
 
                 connectedNodes++;
 
-                console.log(`LOG :: Connected to ${address}.`);
+                fastify.log.info(`Connected to ${address}.`);
 
                 /**
                  * Listen for the "close" event on the socket and remove the `address` from the `opened` and `connected` arrays.
@@ -425,7 +440,7 @@ function connect(MY_ADDRESS, address) {
                     opened.splice(connected.indexOf(address), 1);
                     connected.splice(connected.indexOf(address), 1);
 
-                    console.log(`LOG :: Disconnected from ${address}.`);
+                    fastify.log.info(`Disconnected from ${address}.`);
                 });
             }
         });
@@ -441,7 +456,7 @@ function connect(MY_ADDRESS, address) {
 async function sendTransaction(transaction) {
     sendMessage(produceMessage(TYPE.CREATE_TRANSACTION, transaction), opened);
 
-    console.log("LOG :: Sent one transaction.");
+    fastify.log.info("Sent one transaction.");
 
     await addTransaction(transaction, chainInfo, stateDB);
 }
@@ -609,7 +624,7 @@ async function mine(publicKey, ENABLE_LOGGING) {
 
                 sendMessage(produceMessage(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened); // Broadcast the new block
 
-                console.log(`LOG :: Block #${chainInfo.latestBlock.blockNumber} mined and synced, state transited.`);
+                fastify.log.info(`Block #${chainInfo.latestBlock.blockNumber} mined and synced, state transited.`);
             } else {
                 mined = false;
             }
@@ -619,7 +634,7 @@ async function mine(publicKey, ENABLE_LOGGING) {
 
             worker = fork(`${__dirname}/../miner/worker.js`);
         })
-        .catch(err => console.log(err));
+        .catch(err => fastify.log.error(err));
 }
 
 // Function to mine continuously
