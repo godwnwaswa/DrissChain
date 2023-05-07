@@ -17,7 +17,7 @@ const rpc = require("../rpc/rpc");
 const TYPE = require("./message-types");
 const { verifyBlock, updateDifficulty } = require("../consensus/consensus");
 const { parseJSON, indexTxns } = require("../utils/utils");
-const jelscript = require("../core/runtime");
+const drisscript = require("../core/runtime");
 const { buildMerkleTree } = require("../core/merkle");
 
 const opened    = [];  // Addresses and sockets from connected nodes.
@@ -540,7 +540,7 @@ async function mine(publicKey, ENABLE_LOGGING) {
         if (states[tx.recipient].codeHash !== EMPTY_HASH) {
             const contractInfo = { address: tx.recipient };
             
-            const [ newState, newStorage ] = await jelscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false);
+            const [ newState, newStorage ] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false);
 
             for (const account of Object.keys(newState)) {
                 states[account] = newState[account];
