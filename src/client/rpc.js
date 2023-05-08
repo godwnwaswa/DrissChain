@@ -1,7 +1,21 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const Transaction = require("../core/transaction");
+const pino = require('pino');
 
-async function callJsonrpc(method, params) {
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      ignore: 'pid,hostname',
+    },
+  },
+});
+
+const fastify = require('fastify')({
+  logger : logger
+});
+
+async function callJsonrpc(method, params = null) {
   const url = 'http://localhost:3000/jsonrpc';
   const payload = {
     "jsonrpc": "2.0",
@@ -16,20 +30,27 @@ async function callJsonrpc(method, params) {
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
     });
+
     const data = await response.json();
-    console.log(data.response);
+    fastify.log.info(data.response);
+    return data.response;
+
   } catch (error) {
-    console.error(error);
+    fastify.log.error(error);
   }
 }
 
-// Example usage:
+
 async function main()
 {
-  const params = {
-    blockNumber: 200
+  let params;
+  //get the latest block
+  let response = await callJsonrpc('getWork', params);
+
+  params = {
+    _hash: response.data.hash
   };
-  await callJsonrpc('getBlockByNumber', params);
+  await callJsonrpc('getBlockByHash', params);
 }
 
 main();
