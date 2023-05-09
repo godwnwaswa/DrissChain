@@ -637,7 +637,7 @@ async function mine(publicKey, ENABLE_LOGGING) {
 }
 
 // Function to mine continuously
-function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 100000) {
+function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) {
     let length = chainInfo.latestBlock.blockNumber;
     let mining = true;
 
