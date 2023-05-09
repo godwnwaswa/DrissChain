@@ -8,7 +8,8 @@ const { indexTxns } = require("../utils/utils");
 /**
  * Checks if a block is valid under specified conditions.
 */
-async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging = false) {
+async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging = false) 
+{
     return (
         Block.hasValidPropTypes(newBlock) &&
         SHA256(
@@ -32,10 +33,11 @@ async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging =
     )
 }
 
-async function updateDifficulty(newBlock, chainInfo, blockDB) {
-    if (newBlock.blockNumber % 10 === 0) {
+async function updateDifficulty(newBlock, chainInfo, blockDB) 
+{
+    if (newBlock.blockNumber % 10 === 0) 
+    {
         const oldBlock = await blockDB.get((newBlock.blockNumber - 9).toString());
-
         chainInfo.difficulty = Math.ceil(chainInfo.difficulty *  10* BLOCK_TIME / (newBlock.timestamp - oldBlock.timestamp));
     }
 }
