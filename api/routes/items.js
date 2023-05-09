@@ -1,4 +1,4 @@
-const { getItems, getItem } = require("../controllers/items")
+const { getItems, getItem, addItem } = require("../controllers/items")
 
 const Item = {
     type: 'object',
@@ -30,10 +30,28 @@ const getItemOpts = {
     handler: getItem
 }
 
+const postItemsOpts = {
+    schema: {
+        body: {
+            type: "object",
+            required: ["id", "name"],
+            properties: {
+                id: { type: 'string'},
+                name: { type: 'string'}
+            }
+        },
+        response: {
+            201: Item
+        }
+    },
+    handler: addItem
+}
+
 function itemsRoutes(fastify, options, done)
 {
     fastify.get('/items', getItemsOpts)
     fastify.get('/items/:id', getItemOpts)
+    fastify.post('/items', postItemsOpts)
     done()
 }
 
