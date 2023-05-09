@@ -5,21 +5,12 @@ const { buildMerkleTree } = require("../core/merkle");
 const { BLOCK_REWARD, BLOCK_TIME } = require("../config.json");
 const { indexTxns } = require("../utils/utils");
 
+/**
+ * Checks if a block is valid under specified conditions.
+*/
 async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging = false) {
-    // Check if the block is valid or not, if yes, we will push it to the chain, update the difficulty, chain state and the transaction pool.
-                        
-    // A block is valid under these factors:
-    // - The hash of this block is equal to the hash re-generated according to the block's info.
-    // - The block is mined (the hash starts with (4+difficulty) amount of zeros).
-    // - Transactions in the block are valid.
-    // - Block's timestamp is not greater than the current timestamp and is not lower than the previous block's timestamp.
-    // - Block's parentHash is equal to latest block's hash
-    // - The new difficulty can only be greater than 1 or lower than 1 compared to the old difficulty.
-
     return (
         Block.hasValidPropTypes(newBlock) &&
-
-        // Check hash
         SHA256(
             newBlock.blockNumber.toString()       + 
             newBlock.timestamp.toString()         + 
@@ -29,37 +20,23 @@ async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging =
             newBlock.nonce.toString()
         ) === newBlock.hash &&
         chainInfo.latestBlock.hash === newBlock.parentHash &&
-        
-        // Check proof of work
         newBlock.hash.startsWith("00000" + Array(Math.floor(log16(chainInfo.difficulty)) + 1).join("0")) &&
         newBlock.difficulty === chainInfo.difficulty &&
-
-        // Check transactions ordering
         await Block.hasValidTxOrder(newBlock, stateDB) &&
-        
-        // Check timestamp
         newBlock.timestamp > chainInfo.latestBlock.timestamp &&
         newBlock.timestamp < Date.now() &&
-    
-        // Check block number
         newBlock.blockNumber - 1 === chainInfo.latestBlock.blockNumber &&
-
-        // Check transaction hash
         buildMerkleTree(indexTxns(newBlock.transactions)).val === newBlock.txRoot &&
-
-        // Check gas limit
         Block.hasValidGasLimit(newBlock) &&
-
-        // Check transactions and transit state rih
         await Block.verifyTxAndTransit(newBlock, stateDB, codeDB, enableLogging)
     )
 }
 
 async function updateDifficulty(newBlock, chainInfo, blockDB) {
-    if (newBlock.blockNumber % 100 === 0) {
-        const oldBlock = await blockDB.get((newBlock.blockNumber - 99).toString());
+    if (newBlock.blockNumber % 10 === 0) {
+        const oldBlock = await blockDB.get((newBlock.blockNumber - 9).toString());
 
-        chainInfo.difficulty = Math.ceil(chainInfo.difficulty * 100 * BLOCK_TIME / (newBlock.timestamp - oldBlock.timestamp));
+        chainInfo.difficulty = Math.ceil(chainInfo.difficulty *  10* BLOCK_TIME / (newBlock.timestamp - oldBlock.timestamp));
     }
 }
 
