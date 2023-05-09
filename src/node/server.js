@@ -44,7 +44,6 @@ const bhashDB = new Level(__dirname + "/../log/bhashStore");
 const codeDB = new Level(__dirname + "/../log/codeStore");
 
 const pino = require('pino');
-
 const logger = pino({
   transport: {
     target: 'pino-pretty',
@@ -59,78 +58,10 @@ const fastify = require('fastify')({
 });
 
 /**
- * ------------------------------------------------------------------------------------------------------------------------------------
- * Starts a WebSocket server with some configuration options. 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * WebSocket is a protocol that enables real-time, two-way communication between the server and client. This function is used to 
- * implement a peer-to-peer (P2P) network of nodes in a blockchain application.The P2P network consists of nodes that communicate with 
- * each other, share the latest blockchain data, validate transactions, and  mine new blocks.
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * a. `PORT`: The port number on which the WebSocket server will listen. Default is 3000.
- * b. `RPC_PORT`: The port number on which the RPC server will listen. Default is 5000.
- * c. `PEERS`: An array of WebSocket addresses of other nodes to connect to.
- * d. `MAX_PEERS`: The maximum number of peers that can be connected at the same time. Default is 10.
- * e. `MY_ADDRESS`: The WebSocket address of the current node. Default is `ws://localhost:3000`.
- * f. `ENABLE_MINING`: A boolean flag indicating whether mining is enabled or not. Default is false.
- * g. `ENABLE_LOGGING`: A boolean flag indicating whether logging is enabled or not. Default is false.
- * h. `ENABLE_RPC`: A boolean flag indicating whether the RPC server is enabled or not. Default is false.
- * i. `ENABLE_CHAIN_REQUEST`: A boolean flag indicating whether the node is syncing with the blockchain or not. Default is false.
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * Generates a private key, a key pair, and a public key using the elliptic curve cryptography (EC) library. It sets 
- * up an error handler to catch any uncaught exceptions and logs them to the console. It also stores an empty string with an empty hash
- * in the code database.
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * Creates a WebSocket server using the `ws` library, listens on the specified port, and logs a message to the console indicating that 
- * the server is listening. It then sets up a connection event handler for the server. When a client connects to the server, the 
- * connection event is emitted, and the handler function is executed. 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * Inside the connection event handler, the function sets up a message event handler for the socket, which listens for incoming 
- * messages. When a message is received, it is parsed from binary to JSON format using the `parseJSON` function. The parsed message is 
- * then processed based on its `type` property.
- * ------------------------------------------------------------------------------------------------------------------------------------
- * 
- * 
- * ------------------------------------------------------------------------------------------------------------------------------------
- * There are 3 message types handled in the function:
- * 
- * 1. `TYPE.NEW_BLOCK`: 
- * 
- * This message is sent when a new block is received by a node. The function checks if the block's parent hash is the same as the latest 
- * block's hash. If it is, the block is discarded as a duplicate. If it is not, the function verifies the block using the `verifyBlock` 
- * function and updates the blockchain, transaction pool, and chain info if the block is valid. If mining is enabled, the mined flag is 
- * set to true, and the worker thread is killed and restarted. Finally, the block is broadcast to other nodes using the `sendMessage` 
- * function.
- * 
- * 
- * 2. `TYPE.CREATE_TRANSACTION`: 
- * 
- * This message is sent when a new transaction is received by a node. The function verifies the transaction using the `Transaction.isValid` 
- * function and adds it to the transaction pool. The transaction is then broadcast to other nodes using the `sendMessage` function.
- * 
- * 3. `TYPE.REQUEST`: 
- * 
- * This message is sent when a node requests blockchain data from another node. The function sends the requested data 
- * back to the requester using the `sendMessage` function.
- * ----------------------------------------------------------------------------------------------------------------------------------------
- * 
- * --------------------------------------------------------------------------------------------------------------------------------------
- * The function ends with no return statement, as it is an asynchronous function that starts a server and waits for incoming connections 
- * and messages.
- * --------------------------------------------------------------------------------------------------------------------------------------
  * 
  * */
-async function startServer(options) {
+async function startServer(options) 
+{
     const PORT                 = options.PORT || 3000;                        
     const RPC_PORT             = options.RPC_PORT || 5000;                    
     const PEERS                = options.PEERS || [];                         
@@ -385,9 +316,9 @@ async function startServer(options) {
 
 /**
  * Connects to a WebSocket server at the specified address.
- * 
  * */
-function connect(MY_ADDRESS, address) {
+function connect(MY_ADDRESS, address) 
+{
     /**
      * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
      * 
@@ -451,17 +382,20 @@ function connect(MY_ADDRESS, address) {
     return true;
 }
 
-// Function to broadcast a transaction.
-async function sendTransaction(transaction) {
+/**
+ * Broadcasts a transaction to other nodes.
+*/
+async function sendTransaction(transaction) 
+{
     sendMessage(produceMessage(TYPE.CREATE_TRANSACTION, transaction), opened);
-
     fastify.log.info("Sent one transaction.");
-
     await addTransaction(transaction, chainInfo, stateDB);
 }
 
-async function mine(publicKey, ENABLE_LOGGING) {
-    function mine(block, difficulty) {
+async function mine(publicKey, ENABLE_LOGGING) 
+{
+    function mine(block, difficulty) 
+    {
         return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result));
 
@@ -637,7 +571,8 @@ async function mine(publicKey, ENABLE_LOGGING) {
 }
 
 // Function to mine continuously
-function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) {
+function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) 
+{
     let length = chainInfo.latestBlock.blockNumber;
     let mining = true;
 
