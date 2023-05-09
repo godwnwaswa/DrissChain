@@ -58,7 +58,7 @@ const fastify = require('fastify')({
 });
 
 /**
- * 
+ * Starts a node at a specified WS address.
  * */
 async function startServer(options) 
 {
@@ -69,29 +69,29 @@ async function startServer(options)
     const MY_ADDRESS           = options.MY_ADDRESS || "ws://localhost:3000"; 
     const ENABLE_MINING        = options.ENABLE_MINING ? true : false;        
     const ENABLE_LOGGING       = options.ENABLE_LOGGING ? true : false;       
-    const ENABLE_RPC           = options.ENABLE_RPC ? true : false;           
-    let   ENABLE_CHAIN_REQUEST = options.ENABLE_CHAIN_REQUEST ? true : false; 
+    const ENABLE_RPC           = options.ENABLE_RPC ? true : false; 
+    const privateKey           = options.PRIVATE_KEY || ec.genKeyPair().getPrivate("hex");
+    const keyPair              = ec.keyFromPrivate(privateKey, "hex");
+    const publicKey            = keyPair.getPublic("hex");
+    let   ENABLE_CHAIN_REQUEST = options.ENABLE_CHAIN_REQUEST ? true : false;
 
-    const privateKey = options.PRIVATE_KEY || ec.genKeyPair().getPrivate("hex");
-    const keyPair = ec.keyFromPrivate(privateKey, "hex");
-    const publicKey = keyPair.getPublic("hex");
 
     process.on("uncaughtException", err => fastify.log.error(err));
-
     await codeDB.put(EMPTY_HASH, "");
 
     const server = new WS.Server({ port: PORT });
+    fastify.log.info(`Started WS server on PORT ${PORT.toString()}`);
 
-    fastify.log.info(`Listening on PORT ${PORT.toString()}`);
-
-    server.on("connection", async (socket, req) => {
-        // Message handler
-        socket.on("message", async message => {
+    server.on("connection", async (socket, req) => 
+    {
+        /**
+         * The message handler
+         * */ 
+        socket.on("message", async message => 
+        {
             const _message = parseJSON(message); // Parse binary message to JSON
-
-            switch (_message.type) {
-                // Below are handlers for every message types.
-
+            switch (_message.type) 
+            {
                 case TYPE.NEW_BLOCK:
                     // "TYPE.NEW_BLOCK" is sent when someone wants to submit a new block.
                     // Its message body must contain the new block and the new difficulty.
