@@ -1,6 +1,5 @@
 /**
- * 
- * Enum defining the different types of messages that can be sent between nodes in the Drisschain network.
+ * Enum for different types of messages that can be sent between nodes in the Drisschain network.
  */
 const TYPE = 
 {
