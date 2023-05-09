@@ -26,7 +26,14 @@ const deleteItem = (req, reply) => {
     items = items.filter( item => item.id != id)
 
     reply.send({message: `Item ${id} has been deleted`})
-
 }
 
-module.exports = { getItem, getItems, addItem, deleteItem}
+const updateItem = (req, reply) => {
+    const {id} = req.params
+    const {name} = req.body
+    items = items.map(item => (item.id == id ? {id, name} : item))
+    item = items.find(item => item.id == id)
+    reply.send(item)
+}
+
+module.exports = { getItem, getItems, addItem, updateItem, deleteItem}
