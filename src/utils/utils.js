@@ -19,7 +19,7 @@ const bigIntable = str => {
     }
 }
 /**
- * Parses as string as JSON object.
+ * Parses a string as JSON object./Parse binary message to JSON
  * */
 const parseJSON = value => {
     try {
@@ -28,11 +28,9 @@ const parseJSON = value => {
         return {};
     }
 }
-
 /**
- * Converts an array of transaction objects to an array of string representation of 
- * a transaction object & its index in the array appended to the beginning. 
- * 
+ * Converts an array of transaction objects to an array of string representation of a transaction object 
+ * & its index in the array appended to the beginning.
  * */
 const indexTxns = transactions => transactions.map((txn, index) => index.toString() + JSON.stringify(txn))
 

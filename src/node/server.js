@@ -89,173 +89,128 @@ async function startServer(options)
          * */ 
         socket.on("message", async message => 
         {
-            const _message = parseJSON(message); // Parse binary message to JSON
+            const _message = parseJSON(message); 
             switch (_message.type) 
             {
                 case TYPE.NEW_BLOCK:
-                    // "TYPE.NEW_BLOCK" is sent when someone wants to submit a new block.
-                    // Its message body must contain the new block and the new difficulty.
-
                     const newBlock = _message.data;
-
-                    // We will only continue checking the block if its parentHash is not the same as the latest block's hash.
-                    // This is because the block sent to us is likely duplicated or from a node that has lost and should be discarded.
-
-                    if (!chainInfo.checkedBlock[newBlock.hash]) {
+                    if (!chainInfo.checkedBlock[newBlock.hash]) 
+                    {
                         chainInfo.checkedBlock[newBlock.hash] = true;
-                    } else { return; }
+                    } 
+                    else
+                    { 
+                        return; 
+                    }
 
                     if (
                         newBlock.parentHash !== chainInfo.latestBlock.parentHash &&
                         (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))
-                        // Only proceed if syncing is disabled or enabled but already synced at least the genesis block
-                    ) {
+                    ) 
+                    {
                         chainInfo.checkedBlock[newBlock.hash] = true;
-
-                        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
+                        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) 
+                        {
                             fastify.log.info("New block received.");
-
-                            // If mining is enabled, we will set mined to true, informing that another node has mined before us.
-                            if (ENABLE_MINING) {
-                                mined = true;
-
-                                worker.kill(); // Stop the worker thread
-
-                                worker = fork(`${__dirname}/../miner/worker.js`); // Renew
+                            if (ENABLE_MINING) 
+                            {
+                                mined = true; //check their chain length & sync if > your chain else mine
+                                worker.kill(); 
+                                worker = fork(`${__dirname}/../miner/worker.js`); 
                             }
-
-                            await updateDifficulty(newBlock, chainInfo, blockDB); // Update difficulty
-
-                            await blockDB.put(newBlock.blockNumber.toString(), newBlock); // Add block to chain
-                            await bhashDB.put(newBlock.hash, newBlock.blockNumber.toString()); // Assign block number to the matching block hash
-
-                            chainInfo.latestBlock = newBlock; // Update chain info
-
-                            // Update the new transaction pool (remove all the transactions that are no longer valid).
+                            await updateDifficulty(newBlock, chainInfo, blockDB);
+                            await blockDB.put(newBlock.blockNumber.toString(), newBlock);
+                            await bhashDB.put(newBlock.hash, newBlock.blockNumber.toString());
+                            chainInfo.latestBlock = newBlock;
                             chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB);
-
                             fastify.log.info(`Block #${newBlock.blockNumber} synced, state transited.`);
-
-                            sendMessage(message, opened); // Broadcast block to other nodes
-
-                            if (ENABLE_CHAIN_REQUEST) {
+                            sendMessage(message, opened);
+                            if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
+                            {
                                 ENABLE_CHAIN_REQUEST = false;
                             }
                         }
                     }
-
                     break;
                 
                 case TYPE.CREATE_TRANSACTION:
-                    if (ENABLE_CHAIN_REQUEST) break; // Unsynced nodes should not be able to proceed.
-
-                    // TYPE.CREATE_TRANSACTION is sent when someone wants to submit a transaction.
-                    // Its message body must contain a transaction.
-
-                    // Weakly verify the transation, full verification is achieved in block production.
+                    if (ENABLE_CHAIN_REQUEST) break; 
 
                     const transaction = _message.data;
-
                     if (!(await Transaction.isValid(transaction, stateDB))) break;
 
-                    // Get public key and address from sender
                     const txSenderPubkey = Transaction.getPubKey(transaction);
                     const txSenderAddress = SHA256(txSenderPubkey);
-
                     if (!(await stateDB.keys().all()).includes(txSenderAddress)) break;
-
-                    // After transaction is added, the transaction must be broadcasted to others since the sender might only send it to a few nodes.
-    
-                    // This is pretty much the same as addTransaction, but we will send the transaction to other connected nodes if it's valid.
-    
-                    // Check nonce
                     let maxNonce = 0;
-
-                    for (const tx of chainInfo.transactionPool) {
+                    for (const tx of chainInfo.transactionPool) 
+                    {
                         const poolTxSenderPubkey = Transaction.getPubKey(transaction);
                         const poolTxSenderAddress = SHA256(poolTxSenderPubkey);
-
-                        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) {
+                        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) 
+                        {
                             maxNonce = tx.nonce;
                         }
                     }
-
                     if (maxNonce + 1 !== transaction.nonce) return;
-
                     fastify.log.info("New transaction received, broadcasted and added to pool.");
-
                     chainInfo.transactionPool.push(transaction);
-                    
-                    // Broadcast the transaction
                     sendMessage(message, opened);
-    
                     break;
 
                 case TYPE.REQUEST_BLOCK:
-                    if (!ENABLE_CHAIN_REQUEST) { // Unsynced nodes should not be able to send blocks
+                    if (!ENABLE_CHAIN_REQUEST) 
+                    {
                         const { blockNumber, requestAddress } = _message.data;
-
-                        const socket = opened.find(node => node.address === requestAddress).socket; // Get socket from address
-
-                        const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))); // Get latest block number
-
-                        if (blockNumber > 0 && blockNumber <= currentBlockNumber) { // Check if block number is valid
-                            const block = await blockDB.get( blockNumber.toString() ); // Get block
-
-                            socket.send(produceMessage(TYPE.SEND_BLOCK, block)); // Send block
-                        
-                            fastify.log.info(`Sent block at position ${blockNumber} to ${requestAddress}.`);
+                        const socket = opened.find(node => node.address === requestAddress).socket;
+                        const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)));
+                        if (blockNumber > 0 && blockNumber <= currentBlockNumber) 
+                        {
+                            const block = await blockDB.get( blockNumber.toString() );
+                            socket.send(produceMessage(TYPE.SEND_BLOCK, block));
+                            fastify.log.info(`Sent block #${blockNumber} to ${requestAddress}.`);
                         }
                     }
-    
                     break;
                 
                 case TYPE.SEND_BLOCK:
                     const block = _message.data;
-
-                    if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
-                        if (
-                            chainInfo.latestSyncBlock === null // If latest synced block is null then we immediately add the block into the chain without verification.
-                            ||                                 // This happens due to the fact that the genesis block can discard every possible set rule ¯\_(ツ)_/¯
-                            await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)
-                        ) {
+                    if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) 
+                    {
+                        if ( chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) 
+                        {
                             currentSyncBlock += 1;
-
-                            await blockDB.put(block.blockNumber.toString(), block); // Add block to chain.
-                            await bhashDB.put(block.hash, block.blockNumber.toString()); // Assign block number to the matching block hash
-                    
-                            if (!chainInfo.latestSyncBlock) {
-                                chainInfo.latestSyncBlock = block; // Update latest synced block.                                
-
-                                await changeState(block, stateDB, codeDB, ENABLE_LOGGING); // Transit state
+                            await blockDB.put(block.blockNumber.toString(), block);
+                            await bhashDB.put(block.hash, block.blockNumber.toString());
+                            if (!chainInfo.latestSyncBlock) 
+                            {
+                                chainInfo.latestSyncBlock = block;  
+                                await changeState(block, stateDB, codeDB, ENABLE_LOGGING);
                             }
+                            chainInfo.latestBlock = block; 
+                            await updateDifficulty(block, chainInfo, blockDB); 
+                            fastify.log.info(`Synced block #${block.blockNumber}`);
 
-                            chainInfo.latestBlock = block; // Update latest block.
-
-                            await updateDifficulty(block, chainInfo, blockDB); // Update difficulty.
-
-                            fastify.log.info(`Synced block at position ${block.blockNumber}.`);
-
-                            // Continue requesting the next block
-                            for (const node of opened) {
-                                node.socket.send(
-                                    produceMessage(
+                            for (const node of opened) 
+                            {
+                                node.socket.send
+                                (
+                                    produceMessage
+                                    (
                                         TYPE.REQUEST_BLOCK,
                                         { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
                                     )
                                 );
-
-                                await new Promise(r => setTimeout(r, 5000)); // Delay for block verification
+                                await new Promise(r => setTimeout(r, 5000)); 
                             }
                         }
                     }
-
                     break;
                 
                 case TYPE.HANDSHAKE:
                     const address = _message.data;
-
-                    if (connectedNodes <= MAX_PEERS) {
+                    if (connectedNodes <= MAX_PEERS) 
+                    {
                         connect(MY_ADDRESS, address);
                     }
             }
@@ -263,14 +218,11 @@ async function startServer(options)
     });
 
     if (!ENABLE_CHAIN_REQUEST) {
-        if ((await blockDB.keys().all()).length === 0) {
-            // Initial state
-
+        if ((await blockDB.keys().all()).length === 0) 
+        {
             await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH });
-
             await blockDB.put(chainInfo.latestBlock.blockNumber.toString(), chainInfo.latestBlock);
-            await bhashDB.put(chainInfo.latestBlock.hash, chainInfo.latestBlock.blockNumber.toString()); // Assign block number to the matching block hash
-    
+            await bhashDB.put(chainInfo.latestBlock.hash, chainInfo.latestBlock.blockNumber.toString());
             await changeState(chainInfo.latestBlock, stateDB, codeDB);
         } else {
             chainInfo.latestBlock = await blockDB.get( Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString() );
@@ -278,34 +230,35 @@ async function startServer(options)
         }
     }
 
-    PEERS.forEach(peer => connect(MY_ADDRESS, peer)); // Connect to peerss
-
-    // Sync chain
+    PEERS.forEach(peer => connect(MY_ADDRESS, peer)); 
     let currentSyncBlock = 1;
-
-    if (ENABLE_CHAIN_REQUEST) {
+    if (ENABLE_CHAIN_REQUEST) 
+    {
         const blockNumbers = await blockDB.keys().all();
-
-        if (blockNumbers.length !== 0) {
+        if (blockNumbers.length !== 0) 
+        {
             currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)));
         }
 
-        if (currentSyncBlock === 1) {
-            // Initial state
-
+        if (currentSyncBlock === 1) 
+        {
             await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH });
         }
 
-        setTimeout(async () => {
-            for (const node of opened) {
-                node.socket.send(
-                    produceMessage(
+        setTimeout(async () => 
+        {
+            for (const node of opened) 
+            {
+                node.socket.send
+                (
+                    produceMessage
+                    (
                         TYPE.REQUEST_BLOCK,
                         { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
                     )
                 );
 
-                await new Promise(r => setTimeout(r, 5000)); // Delay for block verification
+                await new Promise(r => setTimeout(r, 5000)); 
             }
         }, 5000);
     }
@@ -321,64 +274,34 @@ function connect(MY_ADDRESS, address)
 {
     /**
      * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
-     * 
      * */
-    if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
-        /**
-         * Create a new WebSocket object with the specified `address`.
-         * 
-         * */
+    if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) 
+    {
         const socket = new WS(address); 
 
         /**
          * Open a connection to the socket and send a handshake message to all connected nodes.
-         * 
          * */
         socket.on("open", async () => {
             for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMessage(TYPE.HANDSHAKE, _address));
             for (const node of opened) node.socket.send(produceMessage(TYPE.HANDSHAKE, address));
 
-            /**
-             * Check if the `address` is not already in the `opened` array and if it is not equal to `MY_ADDRESS`.
-             * This is to prevent address redundancy.
-             * 
-             * */
-            if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) {
+            if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) 
+            {
                 opened.push({ socket, address });
             }
-
-            /**
-             * Push the `address` into the `connected` array, increment the `connectedNodes` counter, 
-             * and log a message to the console.
-             * 
-             * */
-            if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
+            if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) 
+            {
                 connected.push(address);
-
                 connectedNodes++;
-
                 fastify.log.info(`Connected to ${address}.`);
-
-                /**
-                 * Listen for the "close" event on the socket and remove the `address` from the `opened` and `connected` arrays.
-                 * 
-                 * The `indexOf` method is used to find the index of the `address` in the arrays, 
-                 * and the `splice` method is used to remove it.
-                 * 
-                 * */
                 socket.on("close", () => {
                     opened.splice(connected.indexOf(address), 1);
-                    connected.splice(connected.indexOf(address), 1);
-
                     fastify.log.info(`Disconnected from ${address}.`);
                 });
             }
         });
     }
-
-    /**
-     * Return `true` to indicate that the connection was successful.
-     * */
     return true;
 }
 
@@ -396,15 +319,16 @@ async function mine(publicKey, ENABLE_LOGGING)
 {
     function mine(block, difficulty) 
     {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => 
+        {
             worker.addListener("message", message => resolve(message.result));
-
-            worker.send({ type: "MINE", data: [block, difficulty] }); // Send a message to the worker thread, asking it to mine.
+            worker.send({ type: "MINE", data: [block, difficulty] });
         });
     }
 
     // Create a new block.
-    const block = new Block(
+    const block = new Block
+    (
         chainInfo.latestBlock.blockNumber + 1, 
         Date.now(), 
         [], // Will add transactions down here 
@@ -570,17 +494,16 @@ async function mine(publicKey, ENABLE_LOGGING)
         .catch(err => fastify.log.error(err));
 }
 
-// Function to mine continuously
 function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) 
 {
     let length = chainInfo.latestBlock.blockNumber;
     let mining = true;
 
     setInterval(async () => {
-        if (mining || length !== chainInfo.latestBlock.blockNumber) {
+        if (mining || length !== chainInfo.latestBlock.blockNumber) 
+        {
             mining = false;
             length = chainInfo.latestBlock.blockNumber;
-
             if (!ENABLE_CHAIN_REQUEST) await mine(publicKey, ENABLE_LOGGING);
         }
     }, time);
