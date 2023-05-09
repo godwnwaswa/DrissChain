@@ -2,19 +2,15 @@
 /**
  * Calculates base 16 log of a number.
  * */
-function log16(x) {
-    return Math.log(x) / Math.log(16);
-}
+const log16 = x => Math.log(x) / Math.log(16)
 /**
  * Checks if a string represents a number; if each character is a digit (0-9).
  * */
-function isNumber(str) {
-    return str.split("").every(char => "0123456789".includes(char));
-}
+const isNumber = str => str.split("").every(char => "0123456789".includes(char))
 /**
  * Checks if a string can be converted to a BigInt without throwing an error.
  * */
-function bigIntable(str) {
+const bigIntable = str => {
     try {
         BigInt(str);
         return true;
@@ -25,7 +21,7 @@ function bigIntable(str) {
 /**
  * Parses as string as JSON object.
  * */
-function parseJSON(value) {
+const parseJSON = value => {
     try {
         return JSON.parse(value);
     } catch (e) {
@@ -38,8 +34,6 @@ function parseJSON(value) {
  * a transaction object & its index in the array appended to the beginning. 
  * 
  * */
-function indexTxns(transactions) {
-    return transactions.map((txn, index) => index.toString() + JSON.stringify(txn));
-}
+const indexTxns = transactions => transactions.map((txn, index) => index.toString() + JSON.stringify(txn))
 
 module.exports = { log16, isNumber, parseJSON, bigIntable, indexTxns };
