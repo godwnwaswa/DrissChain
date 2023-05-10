@@ -89,9 +89,9 @@ class Transaction
             ) &&
             isNumber(tx.amount) &&
             isNumber(tx.gas)
-        )) { return false }
+        )) 
+        { return false }
         let txSenderPubkey
-        // If recovering public key fails, then transaction is not valid.
         try 
         {
             txSenderPubkey = Transaction.getPubKey(tx)
@@ -101,20 +101,15 @@ class Transaction
             return false
         }
         const txSenderAddress = SHA256(txSenderPubkey)
-        // If state of sender does not exist, then the transaction is 100% false
         if (!(await stateDB.keys().all()).includes(txSenderAddress)) return false
-        // Fetch sender's state object
         const dataFromSender = await stateDB.get(txSenderAddress)
         const senderBalance = dataFromSender.balance
-        // If sender is a contract address, then it's not supposed to be used to send money, so return false if it is.
         if (dataFromSender.codeHash !== EMPTY_HASH) return false
         return (
-            // Check if balance of sender is enough to fulfill transaction's cost.
             (
                 BigInt(senderBalance) >= BigInt(tx.amount) + BigInt(tx.gas) + BigInt(tx.additionalData.contractGas || 0) && 
                 BigInt(tx.gas) >= 1000000000000n
-            ) &&
-            BigInt(tx.amount) >= 0 // Transaction's amount must be at least 0.
+            ) &&  BigInt(tx.amount) >= 0 
         )
     }
 }
