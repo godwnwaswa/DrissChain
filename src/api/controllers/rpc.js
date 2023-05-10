@@ -1,5 +1,5 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const Transaction = require("../core/transaction");
+const Transaction = require("../../core/transaction");
 const EC = require("elliptic").ec, ec = new EC("secp256k1")
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 
@@ -28,25 +28,11 @@ async function callRPC(method, params = null) {
     }
   }
 
-const getBlockNumber = async (req, reply) => {
-    reply.send(await callRPC('getBlockNumber'))
-}
+const getBlockNumber = async (req, reply) => reply.send(await callRPC('getBlockNumber'))
+const getAddress = async (req, reply) => reply.send(await callRPC('getAddress'))
+const getWork = async (req, reply) => reply.send(await callRPC('getWork'))
+const getMining = async (req, reply) => reply.send(await callRPC('getMining'))
 
-const getItem = (req, reply) => {
-    const { id } = req.params
-    const item = items.find(item => item.id == id)
-    reply.send(item)
-}
-
-
-const addItem = (req, reply) => {
-
-    const item = req.body
-
-    items = [...items, item]
-
-    reply.code(201).send(item)
-}
 
 const deleteItem = (req, reply) => {
     const {id} = req.params
@@ -64,4 +50,4 @@ const updateItem = (req, reply) => {
     reply.send(item)
 }
 
-module.exports = { getBlockNumber, getItem, addItem, updateItem, deleteItem}
+module.exports = { getBlockNumber, getAddress, getWork, updateItem, getMining }

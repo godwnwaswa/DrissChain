@@ -71,7 +71,7 @@ async function main()
   // params = {
   //   _hash: work.hash
   // };
-  await callJsonrpc('getBlockNumber');
+  await callJsonrpc('getMining');
 }
 
 main();

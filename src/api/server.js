@@ -15,13 +15,13 @@ const fastify = require('fastify')({
 fastify.register(require('@fastify/swagger'), {
   swagger: {
     info: {
-      title: 'Fastify api',
-      description: 'Fastify swagger',
+      title: 'Drisschain RPC',
+      description: 'An API interacting with the Drisschain RPC endpoints.',
       version: '0.1.0'
     },
   },
   exposeRoute: true,
-  routePrefix: '/docs'
+  routePrefix: '/'
 })
 
 fastify.register(require('./routes/rpc'))
@@ -29,10 +29,12 @@ fastify.register(require('./routes/rpc'))
 const PORT = 3003
 
 const start = async () => {
-  try {
+  try 
+  {
     await fastify.listen(PORT)
-
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     fastify.log.error(error)
   }
 }

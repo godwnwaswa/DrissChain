@@ -30,7 +30,7 @@ async function getWork(blockDB)
   return { hash: latestBlock.hash, nonce: latestBlock.nonce }
 }
 
-function mining(client)
+function getMining(client)
 {
   return { mining: client.mining }
 }
@@ -358,8 +358,8 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
       case 'getWork':
         result = await getWork(blockDB)
         break
-      case 'mining':
-        result = mining(client)
+      case 'getMining':
+        result = getMining(client)
         break
       case 'getBlockByHash':
         result = await getBlockByHash(params, bhashDB, blockDB)
