@@ -69,9 +69,9 @@ async function main()
   let work = await callJsonrpc('getWork');
 
   params = {
-    _hash: work.hash
+    address: '0484904dc68c5832e7c6d7c2a1cd885364b6ef1f692e0d40f5e61615a43ba7789d4e86926284202d23b65f3b4304a77268cc4a6d23bf8ecb995ab1d343f4834fec'
   };
-  await callJsonrpc('getBlockByHash', params);
+  await callJsonrpc('getBalance', params);
 }
 
 main();

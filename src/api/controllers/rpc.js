@@ -34,13 +34,19 @@ const getAddress = async (req, reply) => reply.send(await callRPC('getAddress'))
 const getWork = async (req, reply) => reply.send(await callRPC('getWork'))
 const getMining = async (req, reply) => reply.send(await callRPC('getMining'))
 const getBlockByHash = async (req, reply) => reply.send(await callRPC('getBlockByHash', req.params))
+const getBlockByNumber = async (req, reply) => reply.send(await callRPC('getBlockByNumber', req.params))
+const getBlockTxnCountByHash = async (req, reply) => reply.send(await callRPC('getBlockTxnCountByHash', req.params))
+const getBlockTxnCountByNumber = async (req, reply) => reply.send(await callRPC('getBlockTxnCountByNumber', req.params))
+const getBalance = async (req, reply) => reply.send(await callRPC('getBalance', req.body))
 
-const updateItem = (req, reply) => {
-    const {id} = req.params
-    const {name} = req.body
-    items = items.map(item => (item.id == id ? {id, name} : item))
-    item = items.find(item => item.id == id)
-    reply.send(item)
+module.exports = 
+{ getBlockNumber, 
+  getAddress, 
+  getWork, 
+  getMining, 
+  getBlockByHash, 
+  getBlockByNumber,
+  getBlockTxnCountByHash,
+  getBlockTxnCountByNumber,
+  getBalance
 }
-
-module.exports = { getBlockNumber, getAddress, getWork, getBlockByHash, getMining }
