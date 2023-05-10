@@ -1,5 +1,6 @@
 'use strict'
-const pino = require('pino');
+
+const pino = require('pino')
 const logger = pino({
   transport: {
     target: 'pino-pretty',
@@ -7,10 +8,10 @@ const logger = pino({
       ignore: 'pid,hostname',
     },
   },
-});
+})
 const fastify = require('fastify')({
   logger : logger
-});
+})
 
 fastify.register(require('@fastify/swagger'), {
   swagger: {

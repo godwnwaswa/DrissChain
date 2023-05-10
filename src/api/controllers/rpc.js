@@ -1,11 +1,11 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const Transaction = require("../../core/transaction");
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args))
+const Transaction = require("../../core/transaction")
 const EC = require("elliptic").ec, ec = new EC("secp256k1")
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 
 
-async function callRPC(method, params = null) {
-    const url = 'http://localhost:3000/jsonrpc';
+const callRPC = async (method, params = null) => {
+    const url = 'http://localhost:3000/jsonrpc'
     const payload = {
       "jsonrpc": "2.0",
       "method": method,
@@ -18,12 +18,13 @@ async function callRPC(method, params = null) {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
-      });
+      })
+      const result = await response.json()
+      return result.response.data
   
-      const result = await response.json();
-      return result.response.data;
-  
-    } catch (error) {
+    } 
+    catch (error) 
+    {
       return error
     }
   }
