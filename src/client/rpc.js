@@ -33,7 +33,7 @@ async function callJsonrpc(method, params = null) {
     });
 
     const data = await response.json();
-    fastify.log.info(data.response);
+    fastify.log.info(data.response.data);
     return data.response.data;
 
   } catch (error) {
@@ -71,7 +71,7 @@ async function main()
   params = {
     _hash: work.hash
   };
-  await callJsonrpc('getBlockByHash', params );
+  await callJsonrpc('getBlockByHash', params);
 }
 
 main();

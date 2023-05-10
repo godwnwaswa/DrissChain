@@ -79,15 +79,25 @@ const getBlockByHashOpts = {
             200: {
                 type: 'object',
                 properties: {
-                    transactions: {type : 'array'},
-                    blockNumber: {type : 'integer'},
-                    timestamp: {type : 'integer'},
-                    difficulty: {type : 'number'},
-                    parentHash: {type : 'string'},
-                    nonce: {type : 'integer'},
-                    txRoot: {type : 'string'},
-                    coinbase: {type : 'string'},
-                    hash: {type : 'string'},
+                    block: {
+                        type: 'object',
+                        properties: {
+                            transactions: {
+                                type : 'array',
+                                items: {
+                                    type: 'string'
+                                }
+                            },
+                            blockNumber: {type : 'integer'},
+                            timestamp: {type : 'integer'},
+                            difficulty: {type : 'number'},
+                            parentHash: {type : 'string'},
+                            nonce: {type : 'integer'},
+                            txRoot: {type : 'string'},
+                            coinbase: {type : 'string'},
+                            hash: {type : 'string'},
+                        }
+                    }
                 }
             }
         }
