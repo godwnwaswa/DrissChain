@@ -14,7 +14,6 @@ const fastify = require('fastify')({
   logger : logger
 })
 
-
 async function getBlockNumber(blockDB)
 {
   return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
@@ -54,7 +53,6 @@ async function getBlockByHash(params, bhashDB, blockDB)
   return { block }
 }
 
-
 async function getBlockByNumber(params, blockDB) 
 {
   if (typeof params !== "object" || typeof params.blockNumber !== "number") 
@@ -74,14 +72,14 @@ async function getBlockByNumber(params, blockDB)
   }
 }
 
-async function getBlockTxnCountByHash(params, blockDB) 
+async function getBlockTxnCountByHash(params, bhashDB, blockDB) 
 {
   if (typeof params !== "object" || typeof params._hash !== "string") 
   {
     return "Invalid request."
   }
   const { _hash } = params
-  const hashes = await bhashDB.keys.all()
+  const hashes = await bhashDB.keys().all()
   if (!hashes.includes(_hash)) 
   {
     return "Invalid block hash."
@@ -91,7 +89,6 @@ async function getBlockTxnCountByHash(params, blockDB)
   return { count: block.transactions.length }
 }
 
-// Returns the number of transactions in the block with the specified block number
 async function getBlockTxnCountByNumber(params, blockDB) 
 {
   const { blockNumber } = params
@@ -114,9 +111,6 @@ async function getBlockTxnCountByNumber(params, blockDB)
   }
 }
 
-
-
-// Returns the balance of the account with the specified address.
 async function getBalance(params, stateDB) 
 {
   if 
@@ -128,16 +122,15 @@ async function getBalance(params, stateDB)
   {
     return "Invalid request."
   }
-  const targetState = await stateDB.get(params.address)
+  const {address} = params
+  const targetState = await stateDB.get(address)
   const targetBalance = targetState.balance
   return { balance: targetBalance }
 }
 
-
 async function getCode(params, codeDB) 
 {
   const { codeHash } = params
-
   if 
   (
     typeof params !== "object" ||
@@ -152,8 +145,6 @@ async function getCode(params, codeDB)
     return { code: await codeDB.get(codeHash) }
   }
 }
-
-
 
 async function getCodeHash(params, stateDB)
 {
@@ -196,79 +187,77 @@ async function getStorage(params, stateDB)
     }
 }
 
-
 async function getStorageKeys(params, stateDB)
 {
-    const {address} = params
-    if 
-    (
-      typeof address !== "string"    ||
-      !(await stateDB.keys().all()).includes(address)
-    ) 
-    {
-      return "Invalid request."
-    } 
-    else 
-    {
-      const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
-      return { storage: await storageDB.keys().all() }
-    }
+  const {address} = params
+  if 
+  (
+    typeof address !== "string"    ||
+    !(await stateDB.keys().all()).includes(address)
+  ) 
+  {
+    return "Invalid request."
+  } 
+  else 
+  {
+    const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
+    return { storage: await storageDB.keys().all() }
+  }
 }
-
 
 async function getStorageRoot(params, stateDB)
 {
-    const {address} = params
-    if 
-    (
-      typeof address !== "string"    ||
-      !(await stateDB.keys().all()).includes(address)
-    ) 
-    {
-      return "Invalid request."
-    } 
-    else 
-    {
-      return { storageRoot: (await stateDB.get(contractInfo.address)).storageRoot }
-    }
+  const {address} = params
+  if 
+  (
+    typeof address !== "string"    ||
+    !(await stateDB.keys().all()).includes(address)
+  ) 
+  {
+    return "Invalid request."
+  } 
+  else 
+  {
+    return { storageRoot: (await stateDB.get(contractInfo.address)).storageRoot }
+  }
 }
 
 async function getTxnByBlockNumberAndIndex(params, blockDB)
 {
-    const {index, blockNumber} = params
-    if 
-    (
-      typeof params !== "object" ||
-      typeof blockNumber !== "number" ||
-      typeof index !== "number"
-    ) 
+  const {index, blockNumber} = params
+  if 
+  (
+    typeof params !== "object" ||
+    typeof blockNumber !== "number" ||
+    typeof index !== "number"
+  ) 
+  {
+    return "Invalid request."
+  } 
+  else 
+  {
+    const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
+    if (blockNumber <= 0 || blockNumber > currentBlockNumber) 
     {
-      return "Invalid request."
+      return "Invalid block number."
     } 
     else 
     {
-      const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
-      if (blockNumber <= 0 || blockNumber > currentBlockNumber) 
+      const block = await blockDB.get(blockNumber.toString())
+      if (index < 0 || index >= block.transactions.length) 
       {
-        return "Invalid block number."
+        return "Invalid transaction index."
       } 
       else 
       {
-        const block = await blockDB.get(blockNumber.toString())
-        if (index < 0 || index >= block.transactions.length) 
-        {
-          return "Invalid transaction index."
-        } 
-        else 
-        {
-          return { transaction: block.transactions[index] }
-        }
+        return { transaction: block.transactions[index] }
       }
     }
+  }
 
 }
 
-async function getTxnByBlockHashAndIndex(params, bhashDB)
+async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB)
 {
   const {_hash, index} = params
   if 
@@ -379,9 +368,8 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
         result = await getBlockByNumber(params, blockDB)
         break
       case 'getBlockTxnCountByHash':
-        result = await getBlockTxnCountByHash(params, blockDB)
+        result = await getBlockTxnCountByHash(params, bhashDB, blockDB)
         break
-
       case 'getBlockTxnCountByNumber':
         result = await getBlockTxnCountByNumber(params, blockDB)
         break
