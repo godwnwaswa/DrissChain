@@ -33,15 +33,7 @@ const getBlockNumber = async (req, reply) => reply.send(await callRPC('getBlockN
 const getAddress = async (req, reply) => reply.send(await callRPC('getAddress'))
 const getWork = async (req, reply) => reply.send(await callRPC('getWork'))
 const getMining = async (req, reply) => reply.send(await callRPC('getMining'))
-
-
-const deleteItem = (req, reply) => {
-    const {id} = req.params
-
-    items = items.filter( item => item.id != id)
-
-    reply.send({message: `Item ${id} has been deleted`})
-}
+const getBlockByHash = async (req, reply) => reply.send(await callRPC('getBlockByHash', req.params))
 
 const updateItem = (req, reply) => {
     const {id} = req.params
@@ -51,4 +43,4 @@ const updateItem = (req, reply) => {
     reply.send(item)
 }
 
-module.exports = { getBlockNumber, getAddress, getWork, updateItem, getMining }
+module.exports = { getBlockNumber, getAddress, getWork, getBlockByHash, getMining }

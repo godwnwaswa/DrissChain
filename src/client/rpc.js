@@ -66,12 +66,12 @@ async function main()
 
   // await callJsonrpc('sendTxn', params);
 
-  // let work = await callJsonrpc('getWork');
+  let work = await callJsonrpc('getWork');
 
-  // params = {
-  //   _hash: work.hash
-  // };
-  await callJsonrpc('getMining');
+  params = {
+    _hash: work.hash
+  };
+  await callJsonrpc('getBlockByHash', params );
 }
 
 main();
