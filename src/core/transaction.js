@@ -1,17 +1,17 @@
-"use strict";
+"use strict"
 
-const BN = require("bn.js");
-const { isNumber } = require("../utils/utils");
-const crypto = require("crypto");
-const { createHash } = crypto;
-const ec = new (require("elliptic").ec)("secp256k1");
-const { EMPTY_HASH } = require("../config.json");
+const BN = require("bn.js")
+const { isNumber } = require("../utils/utils")
+const crypto = require("crypto")
+const { createHash } = crypto
+const ec = new (require("elliptic").ec)("secp256k1")
+const { EMPTY_HASH } = require("../config.json")
 
 class Transaction {
   constructor(
     recipient = "",
     amount = "0",
-    gas = "1000000000000",
+    gas = '2000000000',
     additionalData = {},
     nonce = 0
   ) {
@@ -22,7 +22,7 @@ class Transaction {
       additionalData,
       nonce,
       signature: {},
-    });
+    })
   }
 
   static getHash(tx) {
@@ -36,16 +36,16 @@ class Transaction {
           tx.nonce.toString(),
         ].join("")
       )
-      .digest("hex");
+      .digest("hex")
   }
 
   static sign(transaction, keyPair) {
-    const sigObj = keyPair.sign(Transaction.getHash(transaction));
+    const sigObj = keyPair.sign(Transaction.getHash(transaction))
     Object.assign(transaction.signature, {
       v: sigObj.recoveryParam.toString(16),
       r: sigObj.r.toString(16),
       s: sigObj.s.toString(16),
-    });
+    })
   }
 
   static getPubKey(tx) {
@@ -53,52 +53,48 @@ class Transaction {
       r: new BN(tx.signature.r, 16),
       s: new BN(tx.signature.s, 16),
       recoveryParam: parseInt(tx.signature.v, 16),
-    };
-    const msgHash = Transaction.getHash(tx);
-    const txSenderPubkey = ec.recoverPubKey(
-      new BN(msgHash, 16).toString(10),
+    }
+    const txHash = Transaction.getHash(tx)
+    const senderPubkey = ec.recoverPubKey(
+      new BN(txHash, 16).toString(10),
       sigObj,
-      ec.getKeyRecoveryParam(msgHash, sigObj, ec.genKeyPair().getPublic())
-    );
-    return ec.keyFromPublic(txSenderPubkey).getPublic("hex");
+      ec.getKeyRecoveryParam(txHash, sigObj, ec.genKeyPair().getPublic())
+    )
+    return ec.keyFromPublic(senderPubkey).getPublic("hex")
   }
 
   static async isValid(tx, stateDB) {
-    const { recipient, amount, gas, additionalData, nonce } = tx;
-    const { contractGas } = additionalData;
+    const { recipient, amount, gas, additionalData, nonce } = tx
+    const { contractGas } = additionalData
+    //validate tx prop types
     if (
       !(
-        typeof recipient === "string" &&
-        typeof amount === "string" &&
-        typeof gas === "string" &&
-        typeof additionalData === "object" &&
-        typeof nonce === "number" &&
-        (typeof contractGas === "undefined" ||
-          (typeof contractGas === "string" && isNumber(contractGas))) &&
-        isNumber(amount) &&
-        isNumber(gas)
+        typeof recipient === "string" && typeof amount === "string" &&
+        typeof gas === "string" && typeof additionalData === "object" &&
+        typeof nonce === "number" && isNumber(amount) && isNumber(gas) &&
+        // contract gas is undefined for txns made to EOA
+        (typeof contractGas === "undefined" || (typeof contractGas === "string" && isNumber(contractGas))) 
+        
       )
     ) {
-      return false;
+      return false
     }
-    const txSenderPubkey = Transaction.getPubKey(tx);
-    const txSenderAddress = createHash("sha256")
-      .update(txSenderPubkey)
-      .digest("hex");
-    if (!(await stateDB.keys().all()).includes(txSenderAddress)) {
-      return false;
+    const senderPubKey = Transaction.getPubKey(tx)
+    const senderAddress = createHash("sha256").update(senderPubKey).digest("hex")
+    // sender is not part of the chain state
+    if (!(await stateDB.keys().all()).includes(senderAddress)) {
+      return false
     }
-    const { balance, codeHash } = await stateDB.get(txSenderAddress);
+    const { balance, codeHash } = await stateDB.get(senderAddress)
+    //EMPTY_CODE is used to identify EOA; contract accnts don't send txns.
     if (codeHash !== EMPTY_HASH) {
-      return false;
+      return false
     }
     return (
-      BigInt(balance) >=
-        BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0) &&
-      BigInt(gas) >= 1000000000000n &&
-      BigInt(amount) >= 0
-    );
+      BigInt(balance) >= BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0) &&
+      BigInt(gas) >= 2000000000n && BigInt(amount) >= 0
+    )
   }
 }
 
-module.exports = Transaction;
+module.exports = Transaction
