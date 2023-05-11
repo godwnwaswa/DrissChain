@@ -80,48 +80,55 @@ class Block {
 
             //1st tx from this sender address
             if (!states[txSenderAddress]) {
-                //retrieve their state before inclusion of their tx in this block
                 const senderState = await stateDB.get(txSenderAddress)
                 //new entry into the states object of the block; indicates 1st tx from this sender's address
                 states[txSenderAddress] = senderState
                 //for txns to EOA; there's just a single entry in code object
                 code[senderState.codeHash] = await codeDB.get(senderState.codeHash) 
-                if (senderState.codeHash !== EMPTY_HASH) return false //smart contract deployment
+                if (senderState.codeHash !== EMPTY_HASH) return false 
                 states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             } else {
-                // the sender address is a contract
+                //the sender's address has signed multiple txns in the block
+                //the codeHash needs to be equal to EMPTY_HASH for a valid txn
                 if (states[txSenderAddress].codeHash !== EMPTY_HASH) return false
                 //update the state
                 states[txSenderAddress].balance = (BigInt(states[txSenderAddress].balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             }
-
-            // Contract deployment
+            /**
+             * Contract deployment
+             * 
+             * Every state object has its codeHash prop set to EMPTY_HASH, what actually triggers a smart contract is if the tx's 
+             * additionalData object has its property `scBody` set! 
+            */
             if ( states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string" ) {
                 states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
                 code[states[txSenderAddress].codeHash] = tx.additionalData.scBody
             }
 
             // Update nonce
-            states[txSenderAddress].nonce += 1
-
+            states[txSenderAddress].nonce += 1 //?for tx ordering
             if (BigInt(states[txSenderAddress].balance) < 0n) return false
-
+            /**
+             * If the recipient's address is not in the global state, instantiate it with the default state object.
+             * ?should be a valid address
+             * The recipient's address has not sent any of the txns in this block yet.
+            */
             if (!storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
+                // create an entry in the current block's `states` object.
                 states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
-                code[EMPTY_HASH] = ""
+                code[EMPTY_HASH] = "" //surely EMPTY_HASH is insanely updated, reasonably for all state objects.
             }
-
+            /**
+             * Recipient's address is in the global state; but has not sent any of the txns in this block yet.
+            */
             if (storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
                 states[tx.recipient] = await stateDB.get(tx.recipient)
                 code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
             }
-
             states[tx.recipient].balance = (BigInt(states[tx.recipient].balance) + BigInt(tx.amount)).toString()
-
             // Contract execution
             if (states[tx.recipient].codeHash !== EMPTY_HASH) {
                 const contractInfo = { address: tx.recipient }
-
                 const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging)
 
                 for (const account of Object.keys(newState)) {
@@ -130,7 +137,7 @@ class Block {
 
                 storage[tx.recipient] = newStorage
             }
-        }
+        } //end of replay
 
         // Reward
 
@@ -138,60 +145,45 @@ class Block {
             states[block.coinbase] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
             code[EMPTY_HASH] = ""
         }
-
         if (storedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
             states[block.coinbase] = await stateDB.get(block.coinbase)
             code[states[block.coinbase].codeHash] = await codeDB.get(states[block.coinbase].codeHash)
         }
 
         let gas = 0n
-
         for (const tx of block.transactions) { gas += BigInt(tx.gas) + BigInt(tx.additionalData.contractGas || 0) }
-
         states[block.coinbase].balance = (BigInt(states[block.coinbase].balance) + BigInt(BLOCK_REWARD) + gas).toString()
 
         // Finalize state and contract storage into DB
-
         for (const address in storage) {
             const storageDB = new Level(__dirname + "/../log/accountStore/" + address)
             const keys = Object.keys(storage[address])
-
             states[address].storageRoot = buildMerkleTree(keys.map(key => key + " " + storage[address][key])).val
-
             for (const key of keys) {
                 await storageDB.put(key, storage[address][key])
             }
-
             await storageDB.close()
         }
 
         for (const account of Object.keys(states)) {
             await stateDB.put(account, states[account])
-
             await codeDB.put(states[account].codeHash, code[states[account].codeHash])
         }
-
         return true
     }
 
     static async hasValidTxOrder(block, stateDB) {
         const nonces = {}
-
         for (const tx of block.transactions) {
             const txSenderPubKey = Transaction.getPubKey(tx)
             const txSenderAddress = SHA256(txSenderPubKey)
-
             if (typeof nonces[txSenderAddress] === "undefined") {
                 const senderState = await stateDB.get(txSenderAddress)
-
                 nonces[txSenderAddress] = senderState.nonce
             }
-
             if (nonces[txSenderAddress] + 1 !== tx.nonce) return false
-
             nonces[txSenderAddress]++
         }
-
         return true
     }
 
