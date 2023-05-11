@@ -69,7 +69,7 @@ async function main()
   let work = await callJsonrpc('getWork');
 
   params = {
-    address: '0484904dc68c5832e7c6d7c2a1cd885364b6ef1f692e0d40f5e61615a43ba7789d4e86926284202d23b65f3b4304a77268cc4a6d23bf8ecb995ab1d343f4834fec'
+    address: "5f84de7407c12331d4874111f066625ed301b1910c842eb8bc3528547b114c69"
   };
   await callJsonrpc('getBalance', params);
 }
