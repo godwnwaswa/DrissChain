@@ -57,27 +57,7 @@ class Block {
         )
     }
     /**
-     * --------------------------------------------------------------------------------
-     * Verifies the validity of the transactions in a given block and updates the state 
-     * of the blockchain accordingly.It loops through all the transactions in the block 
-     * and checks if each transaction is valid using the `isValid` method from the 
-     * `Transaction` class. If any transaction is invalid, the method returns `false`.
-     * --------------------------------------------------------------------------------
-     * 
-     * -----------------------------------------------------------------------------------
-     * Checks if the sender's address exists in the stateDB. If the sender's address 
-     * doesn't exist, it returns `false`. If the address exists, the method retrieves the 
-     * sender's state from the stateDB and checks if the sender's code hash is empty. 
-     * If it's not empty, the method returns `false`. Otherwise, it deducts the amount of 
-     * the transaction, gas, and contract gas from the sender's balance and updates the 
-     * sender's state.
-     * -----------------------------------------------------------------------------------
-     * 
-     * ------------------------------------------------------------------------------------
-     * If the transaction is a contract deployment, it sets the sender's code hash to the 
-     * hash of the smart contract body and adds the code to the `code` object. It then 
-     * updates the sender's nonce.
-     * ------------------------------------------------------------------------------------
+     * Verifies transactions in the block and transists the state.
      * */
     static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
         for (const tx of block.transactions) {
@@ -85,40 +65,38 @@ class Block {
         }
 
         // Get all existing addresses
-        const addressesInBlock = block.transactions.map(tx => SHA256(Transaction.getPubKey(tx)))
-        const existedAddresses = await stateDB.keys().all()
+        const blockAddresses = block.transactions.map(tx => SHA256(Transaction.getPubKey(tx))) //senders' addresses
+        const storedAddresses = await stateDB.keys().all()
 
-        // If senders' address doesn't exist, return false
-        if (!addressesInBlock.every(address => existedAddresses.includes(address))) return false
+        // If any sender's address doesn't exist, return false
+        if (!blockAddresses.every(address => storedAddresses.includes(address))) return false
 
         // Start state replay to check if transactions are legit
         let states = {}, code = {}, storage = {}
 
         for (const tx of block.transactions) {
-            const txSenderPubkey = Transaction.getPubKey(tx)
-            const txSenderAddress = SHA256(txSenderPubkey)
+            const txSenderPubKey = Transaction.getPubKey(tx)
+            const txSenderAddress = SHA256(txSenderPubKey)
 
+            //1st tx from this sender address
             if (!states[txSenderAddress]) {
+                //retrieve their state before inclusion of their tx in this block
                 const senderState = await stateDB.get(txSenderAddress)
-
+                //new entry into the states object of the block; indicates 1st tx from this sender's address
                 states[txSenderAddress] = senderState
-
-                code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
-
-                if (senderState.codeHash !== EMPTY_HASH) return false
-
+                //for txns to EOA; there's just a single entry in code object
+                code[senderState.codeHash] = await codeDB.get(senderState.codeHash) 
+                if (senderState.codeHash !== EMPTY_HASH) return false //smart contract deployment
                 states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             } else {
+                // the sender address is a contract
                 if (states[txSenderAddress].codeHash !== EMPTY_HASH) return false
-
+                //update the state
                 states[txSenderAddress].balance = (BigInt(states[txSenderAddress].balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             }
 
             // Contract deployment
-            if (
-                states[txSenderAddress].codeHash === EMPTY_HASH &&
-                typeof tx.additionalData.scBody === "string"
-            ) {
+            if ( states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string" ) {
                 states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
                 code[states[txSenderAddress].codeHash] = tx.additionalData.scBody
             }
@@ -128,12 +106,12 @@ class Block {
 
             if (BigInt(states[txSenderAddress].balance) < 0n) return false
 
-            if (!existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
+            if (!storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
                 states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
                 code[EMPTY_HASH] = ""
             }
 
-            if (existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
+            if (storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
                 states[tx.recipient] = await stateDB.get(tx.recipient)
                 code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
             }
@@ -156,12 +134,12 @@ class Block {
 
         // Reward
 
-        if (!existedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
+        if (!storedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
             states[block.coinbase] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
             code[EMPTY_HASH] = ""
         }
 
-        if (existedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
+        if (storedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
             states[block.coinbase] = await stateDB.get(block.coinbase)
             code[states[block.coinbase].codeHash] = await codeDB.get(states[block.coinbase].codeHash)
         }
@@ -200,8 +178,8 @@ class Block {
         const nonces = {}
 
         for (const tx of block.transactions) {
-            const txSenderPubkey = Transaction.getPubKey(tx)
-            const txSenderAddress = SHA256(txSenderPubkey)
+            const txSenderPubKey = Transaction.getPubKey(tx)
+            const txSenderAddress = SHA256(txSenderPubKey)
 
             if (typeof nonces[txSenderAddress] === "undefined") {
                 const senderState = await stateDB.get(txSenderAddress)
@@ -219,11 +197,9 @@ class Block {
 
     static hasValidGasLimit(block) {
         let totalGas = 0n
-
         for (const tx of block.transactions) {
             totalGas += BigInt(tx.additionalData.contractGas || 0)
         }
-
         return totalGas <= BigInt(BLOCK_GAS_LIMIT)
     }
 }

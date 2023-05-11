@@ -87,9 +87,11 @@ class Transaction {
     }
     // stateDB tracks account type & balance
     const { balance, codeHash } = await stateDB.get(senderAddress)
-    //EMPTY_CODE is used to identify EOA; contract accnts don't send txns.
+    //codeHash is used to deploy a smart contract; it's a the has of the smart contract's code.
+    //txns to EOA have a default value of EMPTY_HASH for the codeHash; implying they're not targetting a smart contract address 
+    //EMPTY_HASH is a hash of an empty string ("")
     if (codeHash !== EMPTY_HASH) {
-      return false
+      return false //?handle the smart contract
     }
     return (
       BigInt(balance) >= BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0) &&
