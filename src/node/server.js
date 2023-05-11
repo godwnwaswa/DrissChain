@@ -62,18 +62,11 @@ const fastify = require('fastify')({
  * */
 async function startServer(options) 
 {
-    const PORT                 = options.PORT || 3000                        
-    const RPC_PORT             = options.RPC_PORT || 5000                    
-    const PEERS                = options.PEERS || []                         
-    const MAX_PEERS            = options.MAX_PEERS || 10                      
-    const MY_ADDRESS           = options.MY_ADDRESS || "ws://localhost:3000" 
-    const ENABLE_MINING        = options.ENABLE_MINING ? true : false        
-    const ENABLE_LOGGING       = options.ENABLE_LOGGING ? true : false       
-    const ENABLE_RPC           = options.ENABLE_RPC ? true : false 
-    const privateKey           = options.PRIVATE_KEY || ec.genKeyPair().getPrivate("hex")
-    const keyPair              = ec.keyFromPrivate(privateKey, "hex")
-    const publicKey            = keyPair.getPublic("hex")
-    let   ENABLE_CHAIN_REQUEST = options.ENABLE_CHAIN_REQUEST ? true : false
+    const { PORT = 3000, RPC_PORT = 5000, PEERS = [], MAX_PEERS = 10, MY_ADDRESS = "ws://localhost:3000", ENABLE_MINING = false, ENABLE_LOGGING = false, ENABLE_RPC = false, PRIVATE_KEY = null, ENABLE_CHAIN_REQUEST = false } = options;
+    const privateKey = PRIVATE_KEY || ec.genKeyPair().getPrivate("hex");
+    const keyPair = ec.keyFromPrivate(privateKey, "hex");
+    const publicKey = keyPair.getPublic("hex");
+
 
 
     process.on("uncaughtException", err => fastify.log.error(err))
