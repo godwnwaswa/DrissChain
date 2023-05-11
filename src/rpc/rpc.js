@@ -1,5 +1,7 @@
 "use strict"
 
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
+
 const Transaction = require("../core/transaction")
 const pino = require('pino')
 const logger = pino({
@@ -21,7 +23,7 @@ async function getBlockNumber(blockDB)
 
 function getAddress(client)
 {
-  return { address: client.publicKey }
+  return { address: SHA256(client.publicKey) }
 }
 
 async function getWork(blockDB)
@@ -113,16 +115,17 @@ async function getBlockTxnCountByNumber(params, blockDB)
 
 async function getBalance(params, stateDB) 
 {
+  const {address} = params
   if 
   (
     typeof params !== "object" ||
-    typeof params.address !== "string" ||
-    !(await stateDB.keys().all()).includes(params.address)
+    typeof address !== "string" ||
+    !(await stateDB.keys().all()).includes(address)
   ) 
   {
     return "Invalid request."
   }
-  const {address} = params
+  
   const targetState = await stateDB.get(address)
   const targetBalance = targetState.balance
   return { balance: targetBalance }
