@@ -55,10 +55,13 @@ async function main()
 {
   let params;
 
-  // params = {
-  //   transaction: new Transaction(publicAddress1, 3000)
-  // };
+  params = {
+    recipient: publicAddress1,
+    amount: 4875432525
+  };
 
+  fastify.log.info(new Transaction(publicAddress1, 3000));
+  
   // params = {
   //   transaction: await callJsonrpc('signTxn', params)
   // };
@@ -66,12 +69,12 @@ async function main()
 
   // await callJsonrpc('sendTxn', params);
 
-  let work = await callJsonrpc('getWork');
+  // let work = await callJsonrpc('getWork');
 
-  params = {
-    address: "5f84de7407c12331d4874111f066625ed301b1910c842eb8bc3528547b114c69"
-  };
-  await callJsonrpc('getBalance', params);
+  // params = {
+  //   address: "5f84de7407c12331d4874111f066625ed301b1910c842eb8bc3528547b114c69"
+  // };
+  await callJsonrpc('signTxn', params);
 }
 
 main();

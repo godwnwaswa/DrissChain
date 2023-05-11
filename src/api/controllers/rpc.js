@@ -5,7 +5,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 
 
 const callRPC = async (method, params = null) => {
-    const url = 'http://localhost:3001/jsonrpc'
+    const url = 'http://localhost:3000/jsonrpc'
     const payload = {
       "jsonrpc": "2.0",
       "method": method,
@@ -48,10 +48,20 @@ const getBlockByNumber = getRPC('getBlockByNumber')
 const getBlockTxnCountByHash = getRPC('getBlockTxnCountByHash')
 const getBlockTxnCountByNumber = getRPC('getBlockTxnCountByNumber')
 const getBalance = postRPC('getBalance')
+const getCode = getRPC('getCode')
+const getCodeHash = getRPC('getCodeHash')
+const getStorage = postRPC('getStorage')
+const getStorageRoot = getRPC('getStorageRoot')
+const getStorageKeys = getRPC('getStorageKeys')
+const getTxnByBlockNumberAndIndex = getRPC('getTxnByBlockNumberAndIndex')
+const getTxnByBlockHashAndIndex = getRPC('getTxnByBlockHashAndIndex')
+const signTxn = postRPC('signTxn')
+const sendTxn = postRPC('sendTxn')
 
 
 module.exports = 
-{ getBlockNumber, 
+{ 
+  getBlockNumber, 
   getAddress, 
   getWork, 
   getMining, 
@@ -59,5 +69,14 @@ module.exports =
   getBlockByNumber,
   getBlockTxnCountByHash,
   getBlockTxnCountByNumber,
-  getBalance
+  getBalance,
+  getCode,
+  getCodeHash,
+  getStorage,
+  getStorageKeys,
+  getStorageRoot,
+  getTxnByBlockNumberAndIndex,
+  getTxnByBlockHashAndIndex,
+  signTxn,
+  sendTxn,
 }

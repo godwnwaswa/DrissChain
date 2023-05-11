@@ -185,8 +185,8 @@ async function getStorage(params, stateDB)
     else 
     {
       const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
-      return { storage: await storageDB.get(key) }
       storageDB.close()
+      return { storage: await storageDB.get(key) }
     }
 }
 
@@ -324,19 +324,22 @@ async function sendTxn(params, transactionHandler)
 
 async function signTxn(params, keyPair) 
 {
-    const { transaction } = params
+    const { recipient, amount } = params
     if 
     (
       typeof params !== "object" ||
-      typeof transaction !== "object"
+      typeof recipient !== "string" ||
+      typeof amount !== "number"
+      
     ) 
     {
       return "Invalid request."
     } 
     else 
     {
-      Transaction.sign(transaction, keyPair)
-      return { transaction }
+      const tx = new Transaction(recipient, amount)
+      Transaction.sign(tx, keyPair)
+      return { tx }
     }
 }
 
