@@ -11,14 +11,14 @@ class Transaction {
   constructor(
     recipient = "",
     amount = "0",
-    gas = '2000000000',
+    gas = '2000000000', //base gas fee
     additionalData = {},
     nonce = 0
   ) {
     Object.assign(this, {
       recipient,
       amount,
-      gas,
+      gas, 
       additionalData,
       nonce,
       signature: {},
@@ -85,6 +85,7 @@ class Transaction {
     if (!(await stateDB.keys().all()).includes(senderAddress)) {
       return false
     }
+    // stateDB tracks account type & balance
     const { balance, codeHash } = await stateDB.get(senderAddress)
     //EMPTY_CODE is used to identify EOA; contract accnts don't send txns.
     if (codeHash !== EMPTY_HASH) {
