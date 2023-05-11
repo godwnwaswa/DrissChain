@@ -5,7 +5,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 
 
 const callRPC = async (method, params = null) => {
-    const url = 'http://localhost:3000/jsonrpc'
+    const url = 'http://localhost:3001/jsonrpc'
     const payload = {
       "jsonrpc": "2.0",
       "method": method,
@@ -28,16 +28,27 @@ const callRPC = async (method, params = null) => {
       return error
     }
   }
+  
+const getRPC = (method) => async (req, reply) => {
+  const result = await callRPC(method, req.params || req.body)
+  reply.send(result)
+}
 
-const getBlockNumber = async (req, reply) => reply.send(await callRPC('getBlockNumber'))
-const getAddress = async (req, reply) => reply.send(await callRPC('getAddress'))
-const getWork = async (req, reply) => reply.send(await callRPC('getWork'))
-const getMining = async (req, reply) => reply.send(await callRPC('getMining'))
-const getBlockByHash = async (req, reply) => reply.send(await callRPC('getBlockByHash', req.params))
-const getBlockByNumber = async (req, reply) => reply.send(await callRPC('getBlockByNumber', req.params))
-const getBlockTxnCountByHash = async (req, reply) => reply.send(await callRPC('getBlockTxnCountByHash', req.params))
-const getBlockTxnCountByNumber = async (req, reply) => reply.send(await callRPC('getBlockTxnCountByNumber', req.params))
-const getBalance = async (req, reply) => reply.send(await callRPC('getBalance', req.body))
+const postRPC = (method) => async (req, reply) => {
+  const result = await callRPC(method, req.body)
+  reply.send(result)
+}
+
+const getBlockNumber = getRPC('getBlockNumber')
+const getAddress = getRPC('getAddress')
+const getWork = getRPC('getWork')
+const getMining = getRPC('getMining')
+const getBlockByHash = getRPC('getBlockByHash')
+const getBlockByNumber = getRPC('getBlockByNumber')
+const getBlockTxnCountByHash = getRPC('getBlockTxnCountByHash')
+const getBlockTxnCountByNumber = getRPC('getBlockTxnCountByNumber')
+const getBalance = postRPC('getBalance')
+
 
 module.exports = 
 { getBlockNumber, 
