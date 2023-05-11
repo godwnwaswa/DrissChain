@@ -30,11 +30,11 @@ const Block =  {
                 type: 'string'
             }
         },
-        blockNumber: {type : 'integer'},
-        timestamp: {type : 'integer'},
-        difficulty: {type : 'integer'},
+        blockNumber: {type : 'number'},
+        timestamp: {type : 'number'},
+        difficulty: {type : 'number'},
         parentHash: {type : 'string'},
-        nonce: {type : 'integer'},
+        nonce: {type : 'number'},
         txRoot: {type : 'string'},
         coinbase: {type : 'string'},
         hash: {type : 'string'},
