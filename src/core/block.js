@@ -1,51 +1,9 @@
-/**
- * Indicates that the JavaScript code should be executed in strict mode. 
- * In strict mode, certain actions that were previously considered to 
- * be “silent failures” are now treated as errors. 
- * Also, it disallows certain actions, such as using undeclared
- * variables, creating functions in non-function code, or 
- * using `this` in a function that is not a method of an object.
- * 
- * */
 "use strict"
 
-/**
- * ----------------------------------------------------------------------------------
- * Level => is a lightweight key-value database library.
- * This database is used in the application to store the state of the blockchain.
- * ----------------------------------------------------------------------------------
- * 
- * -----------------------------------------------------------------------------------
- * crypto => uses the `createHash` method to generate a hash value for a given
- * message, and uses the `digest` method to output the hash value in hexadecimal format.
- * -------------------------------------------------------------------------------------
- * 
- * ---------------------------------------------------------------------------------
- * EC => a package that provides tools for working with elliptic curve cryptography. 
- * It uses the `ec` object to create a new instance of the secp256k1 elliptic curve.
- * ---------------------------------------------------------------------------------
- * 
- * ---------------------------------------------------------------------------------
- * Transaction => represents a transaction on the blockchain
- * ---------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------
- * buildMerkleTree => builds a Merkle tree for a given set of transactions.
- * ------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------
- * config.json => contains various constants used in the blockchain application, 
- * such as the block reward, block gas limit, and empty hash value.
- * ------------------------------------------------------------------------------------
- * 
- * ----------------------------------------------------------------------
- * drisscript => used for executing smart contracts on the blockchain.
- * ----------------------------------------------------------------------
- * 
- * */
 const { Level } = require('level')
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const EC = require("elliptic").ec, ec = new EC("secp256k1")
+
 const Transaction = require("./transaction")
 const { buildMerkleTree } = require("./merkle")
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH } = require("../config.json")
@@ -53,50 +11,51 @@ const drisscript = require("./runtime")
 const { indexTxns } = require("../utils/utils")
 
 class Block {
-    constructor(blockNumber = 1, timestamp = Date.now(), transactions = [], difficulty = 1, parentHash = "", coinbase = "") {
-        this.transactions = transactions                      // Transaction list
-
-        // Block header
-        this.blockNumber  = blockNumber                       // Block's index in chain
-        this.timestamp    = timestamp                         // Block creation timestamp
-        this.difficulty   = difficulty                        // Difficulty to mine block
-        this.parentHash   = parentHash                        // Parent (previous) block's hash
-        this.nonce        = 0                                 // Nonce
-        this.txRoot       = buildMerkleTree(indexTxns(transactions)).val // Merkle root of transactions
-        this.coinbase     = coinbase                          // Address to receive reward
-        this.hash         = Block.getHash(this)               // Hash of the block
+    constructor(
+        blockNumber = 1,
+        timestamp = Date.now(),
+        transactions = [],
+        difficulty = 1,
+        parentHash = "",
+        coinbase = ""
+    ) {
+        Object.assign(this, {
+            blockNumber,
+            timestamp,
+            transactions,
+            difficulty,
+            parentHash,
+            nonce: 0,
+            txRoot: buildMerkleTree(indexTxns(transactions)).val,
+            coinbase,
+        })
+        this.hash = Block.getHash(this)
     }
-
     /**
-     * Generates a hash value for a given block instance by concatenating various 
-     * properties of the block and hashing the resulting string using SHA256.
+     * Generates a hash of a block by concatenating various properties of the block and hashing 
+     * the resulting string using SHA256.
      * */
     static getHash(block) {
-        // Convert every piece of data to string, merge and then hash
         return SHA256(
-            block.blockNumber.toString()       + 
-            block.timestamp.toString()         + 
-            block.txRoot                       + 
-            block.difficulty.toString()        +
-            block.parentHash                   +
+            block.blockNumber.toString() +
+            block.timestamp.toString() +
+            block.txRoot +
+            block.difficulty.toString() +
+            block.parentHash +
             block.nonce.toString()
         )
     }
     /**
-     * Checks if a given block instance has valid property types.
+     * Checks if a block has valid property types.
      * */
     static hasValidPropTypes(block) {
         return (
-            Array.isArray(block.transactions)     &&
-            typeof block.blockNumber === "number" &&
-            typeof block.timestamp   === "number" &&
-            typeof block.difficulty  === "number" &&
-            typeof block.parentHash  === "string" &&
-            typeof block.nonce       === "number" &&
-            typeof block.txRoot      === "string" &&
-            typeof block.hash        === "string"
+            Array.isArray(block.transactions) && typeof block.blockNumber === "number" &&
+            typeof block.timestamp === "number" && typeof block.difficulty === "number" &&
+            typeof block.parentHash === "string" && typeof block.nonce === "number" &&
+            typeof block.txRoot === "string" && typeof block.hash === "string"
         )
-    } 
+    }
     /**
      * --------------------------------------------------------------------------------
      * Verifies the validity of the transactions in a given block and updates the state 
@@ -131,23 +90,23 @@ class Block {
 
         // If senders' address doesn't exist, return false
         if (!addressesInBlock.every(address => existedAddresses.includes(address))) return false
-        
+
         // Start state replay to check if transactions are legit
         let states = {}, code = {}, storage = {}
 
         for (const tx of block.transactions) {
             const txSenderPubkey = Transaction.getPubKey(tx)
             const txSenderAddress = SHA256(txSenderPubkey)
-            
+
             if (!states[txSenderAddress]) {
                 const senderState = await stateDB.get(txSenderAddress)
 
                 states[txSenderAddress] = senderState
-                
+
                 code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
 
                 if (senderState.codeHash !== EMPTY_HASH) return false
- 
+
                 states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             } else {
                 if (states[txSenderAddress].codeHash !== EMPTY_HASH) return false
@@ -173,20 +132,20 @@ class Block {
                 states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
                 code[EMPTY_HASH] = ""
             }
-        
+
             if (existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
                 states[tx.recipient] = await stateDB.get(tx.recipient)
                 code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
             }
-        
+
             states[tx.recipient].balance = (BigInt(states[tx.recipient].balance) + BigInt(tx.amount)).toString()
-        
+
             // Contract execution
             if (states[tx.recipient].codeHash !== EMPTY_HASH) {
                 const contractInfo = { address: tx.recipient }
-                
-                const [ newState, newStorage ] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging)
-        
+
+                const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging)
+
                 for (const account of Object.keys(newState)) {
                     states[account] = newState[account]
                 }
@@ -201,7 +160,7 @@ class Block {
             states[block.coinbase] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
             code[EMPTY_HASH] = ""
         }
-    
+
         if (existedAddresses.includes(block.coinbase) && !states[block.coinbase]) {
             states[block.coinbase] = await stateDB.get(block.coinbase)
             code[states[block.coinbase].codeHash] = await codeDB.get(states[block.coinbase].codeHash)
@@ -239,7 +198,7 @@ class Block {
 
     static async hasValidTxOrder(block, stateDB) {
         const nonces = {}
-        
+
         for (const tx of block.transactions) {
             const txSenderPubkey = Transaction.getPubKey(tx)
             const txSenderAddress = SHA256(txSenderPubkey)
