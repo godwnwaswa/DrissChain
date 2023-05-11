@@ -208,7 +208,7 @@ function rpcRoutes(fastify, options, done)
     fastify.get('/blocks/number/:blockNumber', getBlockByNumberOpts)
     fastify.get('/blocks/hash/:_hash/tx_count', getBlockTxnCountByHashOpts)
     fastify.get('/blocks/number/:blockNumber/tx_count', getBlockTxnCountByNumberOpts)
-    fastify.post('/account/balance', getBalanceOpts)
+    fastify.post('/address/balance', getBalanceOpts)
     done()
 }
 
