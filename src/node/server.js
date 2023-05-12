@@ -118,10 +118,10 @@ async function startServer(options)
                             chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
                             fastify.log.info(`Block #${newBlock.blockNumber} synced, state transited.`)
                             sendMsg(message, opened)
-                            if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
-                            {
-                                ENABLE_CHAIN_REQUEST = false
-                            }
+                            // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
+                            // {
+                            //     ENABLE_CHAIN_REQUEST = false
+                            // }
                         }
                     }
                     break
