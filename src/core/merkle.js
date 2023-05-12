@@ -1,16 +1,5 @@
 /**
  * --------------------------------------------------------------------------------------
- * This is a JavaScript module that implements a Merkle tree data structure and functions 
- * for generating Merkle paths and verifying Merkle proofs.
- * --------------------------------------------------------------------------------------
- * 
- * --------------------------------------------------------------------------------------
- * The module uses BigInt to compare hash values as unsigned integers, which is necessary 
- * because the hex string representation of a hash can exceed the maximum safe integer 
- * value in JavaScript.
- * --------------------------------------------------------------------------------------
- * 
- * --------------------------------------------------------------------------------------
  * A Merkle tree is a binary tree where each leaf node is a hash of a data item, and each 
  * non-leaf node is a hash of its two child nodes. This structure is commonly used in 
  * cryptographic applications such as digital signatures and blockchain technology, where 
@@ -32,7 +21,6 @@ function Node(val, left = null, right = null) {
  * Takes a node from the Merkle tree and a target hash, and recursively traverses the tree 
  * to find the path of nodes from the root to the target. It returns an array of the values 
  * of the nodes on the path.
- * ----------------------------------------------------------------------------------------
  * */
 function getMerklePath(node, target, path = []) {
     if (node.val === target) return [...path, target];
@@ -48,11 +36,9 @@ function getMerklePath(node, target, path = []) {
 }
 
 /**
- * ------------------------------------------------------------------------------------------------
  * Takes an array of leaf node hashes and a root hash, and checks whether the hashes can be used to 
  * prove the inclusion of a particular leaf node in the tree. It does this by re-calculating the 
  * root hash from the leaf node hashes and comparing it to the given root hash.
- * ------------------------------------------------------------------------------------------------
  * */
 function verifyMerkleProof(leaves, root) {
     let genHash = leaves[0];
@@ -69,11 +55,8 @@ function verifyMerkleProof(leaves, root) {
 }
 
 /**
- * ---------------------------------------------------------------------------------------------
  * Takes an array of data items, hashes each item using the SHA-256 hashing algorithm, 
  * and constructs a Merkle tree from the resulting hashes. It returns the root node of the tree.
- * ---------------------------------------------------------------------------------------------
- * 
  * */
 function buildMerkleTree(items) {
     if (items.length === 0) return Node(SHA256("0"));
