@@ -4,7 +4,7 @@ const { Level } = require('level');
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 const EC = require("elliptic").ec, ec = new EC("secp256k1");
 
-const jelscript = require("./runtime");
+const drisscript = require("./runtime");
 const Transaction = require("./transaction");
 
 const { EMPTY_HASH, BLOCK_REWARD } = require("../config.json");
@@ -42,7 +42,7 @@ const { EMPTY_HASH, BLOCK_REWARD } = require("../config.json");
  * 
  * ---------------------------------------------------------------------------------------------------------------
  * If the recipient of the transaction has a code hash associated with it (i.e., a smart contract is deployed at 
- * that address), the function executes the contract code using the `jelscript` function, passing in the contract 
+ * that address), the function executes the contract code using the `drisscript` function, passing in the contract 
  * code, the current state database, the new block, the transaction, and some additional information about the 
  * contract.
  * ---------------------------------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ async function changeState(newBlock, stateDB, codeDB, enableLogging = false) { /
         if (dataFromRecipient.codeHash !== EMPTY_HASH) {
             const contractInfo = { address: tx.recipient };
 
-            const [ newState, newStorage ] = await jelscript(await codeDB.get(dataFromRecipient.codeHash), {}, BigInt(tx.additionalData.contractGas || 0), stateDB, newBlock, tx, contractInfo, enableLogging);
+            const [ newState, newStorage ] = await drisscript(await codeDB.get(dataFromRecipient.codeHash), {}, BigInt(tx.additionalData.contractGas || 0), stateDB, newBlock, tx, contractInfo, enableLogging);
 
             const storageDB = new Level(__dirname + "/../log/accountStore/" + tx.recipient);
             const keys = Object.keys(newStorage);

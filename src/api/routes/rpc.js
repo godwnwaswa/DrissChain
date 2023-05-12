@@ -383,9 +383,9 @@ const sendTxnOpts = {
     schema: {
         body: {
             type: 'object',
-            required: ['transaction'],
+            required: ['tx'],
             properties: {
-                transaction: Transaction
+                tx: Transaction
             }
         },
         response: {

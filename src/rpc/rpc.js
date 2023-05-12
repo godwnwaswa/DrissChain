@@ -13,41 +13,34 @@ const logger = pino({
   },
 })
 const fastify = require('fastify')({
-  logger : logger
+  logger: logger
 })
 
-async function getBlockNumber(blockDB)
-{
+async function getBlockNumber(blockDB) {
   return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
 }
 
-function getAddress(client)
-{
+function getAddress(client) {
   return { address: SHA256(client.publicKey) }
 }
 
-async function getWork(blockDB)
-{
-  const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())   
+async function getWork(blockDB) {
+  const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())
   return { hash: latestBlock.hash, nonce: latestBlock.nonce }
 }
 
-function getMining(client)
-{
+function getMining(client) {
   return { mining: client.mining }
 }
 
-async function getBlockByHash(params, bhashDB, blockDB) 
-{
-  if (typeof params !== "object" || typeof params._hash !== "string") 
-  {
+async function getBlockByHash(params, bhashDB, blockDB) {
+  if (typeof params !== "object" || typeof params._hash !== "string") {
     return "Invalid request."
   }
 
   const { _hash } = params
   const hashes = await bhashDB.keys().all()
-  if (!hashes.includes(_hash)) 
-  {
+  if (!hashes.includes(_hash)) {
     return "Invalid block hash."
   }
   const blockNumber = await bhashDB.get(_hash)
@@ -55,35 +48,28 @@ async function getBlockByHash(params, bhashDB, blockDB)
   return { block }
 }
 
-async function getBlockByNumber(params, blockDB) 
-{
-  if (typeof params !== "object" || typeof params.blockNumber !== "number") 
-  {
+async function getBlockByNumber(params, blockDB) {
+  if (typeof params !== "object" || typeof params.blockNumber !== "number") {
     return "Invalid request."
   }
   const { blockNumber } = params
   const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
-  if (blockNumber <= 0 || blockNumber > currentBlockNumber) 
-  {
+  if (blockNumber <= 0 || blockNumber > currentBlockNumber) {
     return "Invalid block number."
-  } 
-  else 
-  {
+  }
+  else {
     const block = await blockDB.get(blockNumber.toString())
     return { block }
   }
 }
 
-async function getBlockTxnCountByHash(params, bhashDB, blockDB) 
-{
-  if (typeof params !== "object" || typeof params._hash !== "string") 
-  {
+async function getBlockTxnCountByHash(params, bhashDB, blockDB) {
+  if (typeof params !== "object" || typeof params._hash !== "string") {
     return "Invalid request."
   }
   const { _hash } = params
   const hashes = await bhashDB.keys().all()
-  if (!hashes.includes(_hash)) 
-  {
+  if (!hashes.includes(_hash)) {
     return "Invalid block hash."
   }
   const blockNumber = await bhashDB.get(_hash)
@@ -91,168 +77,139 @@ async function getBlockTxnCountByHash(params, bhashDB, blockDB)
   return { count: block.transactions.length }
 }
 
-async function getBlockTxnCountByNumber(params, blockDB) 
-{
+async function getBlockTxnCountByNumber(params, blockDB) {
   const { blockNumber } = params
-  if (typeof params !== "object" || typeof blockNumber !== "number") 
-  {
+  if (typeof params !== "object" || typeof blockNumber !== "number") {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map((key) => parseInt(key)))
-    if (blockNumber <= 0 || blockNumber > currentBlockNumber) 
-    {
+    if (blockNumber <= 0 || blockNumber > currentBlockNumber) {
       return "Invalid block number."
-    } 
-    else 
-    {
+    }
+    else {
       const block = await blockDB.get(blockNumber.toString())
       return { count: block.transactions.length }
     }
   }
 }
 
-async function getBalance(params, stateDB) 
-{
-  const {address} = params
-  if 
-  (
+async function getBalance(params, stateDB) {
+  const { address } = params
+  if
+    (
     typeof params !== "object" ||
     typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
-  ) 
-  {
+  ) {
     return "Invalid request."
   }
-  
+
   const targetState = await stateDB.get(address)
   const targetBalance = targetState.balance
   return { balance: targetBalance }
 }
 
-async function getCode(params, codeDB) 
-{
+async function getCode(params, codeDB) {
   const { codeHash } = params
-  if 
-  (
+  if
+    (
     typeof params !== "object" ||
     typeof codeHash !== "string" ||
     !(await codeDB.keys().all()).includes(codeHash)
-  ) 
-  {
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
     return { code: await codeDB.get(codeHash) }
   }
 }
 
-async function getCodeHash(params, stateDB)
-{
-    const {address} = params
-    if 
+async function getCodeHash(params, stateDB) {
+  const { address } = params
+  if
     (
-      typeof params !== "object" ||
-      typeof address !== "string" ||
-      !(await stateDB.keys().all()).includes(address)
-    ) 
-    {
-      return "Invalid request."
-    } 
-    else 
-    {
-      const dataFromTarget = await stateDB.get(address) // Fetch target's state object
-      return { codeHash: dataFromTarget.codeHash }
-    }
-}
-
-async function getStorage(params, stateDB)
-{
-    const {address, key} = params
-    if 
-    (
-      typeof params !== "object"     ||
-      typeof address !== "string"    ||
-      typeof key !== "string"        ||
-      !(await stateDB.keys().all()).includes(address)
-    ) 
-    {
-      return "Invalid request."
-    } 
-
-    else 
-    {
-      const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
-      storageDB.close()
-      return { storage: await storageDB.get(key) }
-    }
-}
-
-async function getStorageKeys(params, stateDB)
-{
-  const {address} = params
-  if 
-  (
-    typeof address !== "string"    ||
+    typeof params !== "object" ||
+    typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
-  ) 
-  {
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
+    const dataFromTarget = await stateDB.get(address) // Fetch target's state object
+    return { codeHash: dataFromTarget.codeHash }
+  }
+}
+
+async function getStorage(params, stateDB) {
+  const { address, key } = params
+  if
+    (
+    typeof params !== "object" ||
+    typeof address !== "string" ||
+    typeof key !== "string" ||
+    !(await stateDB.keys().all()).includes(address)
+  ) {
+    return "Invalid request."
+  }
+
+  else {
+    const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
+    storageDB.close()
+    return { storage: await storageDB.get(key) }
+  }
+}
+
+async function getStorageKeys(params, stateDB) {
+  const { address } = params
+  if
+    (
+    typeof address !== "string" ||
+    !(await stateDB.keys().all()).includes(address)
+  ) {
+    return "Invalid request."
+  }
+  else {
     const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
     return { storage: await storageDB.keys().all() }
   }
 }
 
-async function getStorageRoot(params, stateDB)
-{
-  const {address} = params
-  if 
-  (
-    typeof address !== "string"    ||
+async function getStorageRoot(params, stateDB) {
+  const { address } = params
+  if
+    (
+    typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
-  ) 
-  {
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
     return { storageRoot: (await stateDB.get(contractInfo.address)).storageRoot }
   }
 }
 
-async function getTxnByBlockNumberAndIndex(params, blockDB)
-{
-  const {index, blockNumber} = params
-  if 
-  (
+async function getTxnByBlockNumberAndIndex(params, blockDB) {
+  const { index, blockNumber } = params
+  if
+    (
     typeof params !== "object" ||
     typeof blockNumber !== "number" ||
     typeof index !== "number"
-  ) 
-  {
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
-    if (blockNumber <= 0 || blockNumber > currentBlockNumber) 
-    {
+    if (blockNumber <= 0 || blockNumber > currentBlockNumber) {
       return "Invalid block number."
-    } 
-    else 
-    {
+    }
+    else {
       const block = await blockDB.get(blockNumber.toString())
-      if (index < 0 || index >= block.transactions.length) 
-      {
+      if (index < 0 || index >= block.transactions.length) {
         return "Invalid transaction index."
-      } 
-      else 
-      {
+      }
+      else {
         return { transaction: block.transactions[index] }
       }
     }
@@ -260,61 +217,49 @@ async function getTxnByBlockNumberAndIndex(params, blockDB)
 
 }
 
-async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB)
-{
-  const {_hash, index} = params
-  if 
-  (
+async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB) {
+  const { _hash, index } = params
+  if
+    (
     typeof params !== "object" ||
     typeof _hash !== "string" ||
     typeof index !== "number"
-  ) 
-  {
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
+  }
+  else {
     const hashes = (await bhashDB.keys().all())
-    if (!hashes.find(hash => hash === _hash)) 
-    {
+    if (!hashes.find(hash => hash === _hash)) {
       return "Invalid block hash."
-    } 
-    else 
-    {
+    }
+    else {
       const blockNumber = await bhashDB.get(_hash)
       const block = await blockDB.get(blockNumber)
-      if (index < 0 || index >= block.transactions.length) 
-      {
+      if (index < 0 || index >= block.transactions.length) {
         return "Invalid transaction index."
-      } 
-      else 
-      {
+      }
+      else {
         return { transaction: block.transactions[index] }
       }
     }
   }
 }
 
-async function sendTxn(params, transactionHandler) 
-{
-  const { transaction } = params
-  if 
-  (
+async function sendTxn(params, txHandler) {
+  const { tx } = params
+  if
+    (
     typeof params !== "object" ||
-    typeof transaction !== "object"
-  ) 
-  {
+    typeof tx !== "object"
+  ) {
     return "Invalid request."
-  } 
-  else 
-  {
-    try 
-    {
-      await transactionHandler(transaction)
+  }
+  else {
+    try {
+      await txHandler(tx)
       return { message: "Transaction received." }
-    } 
-    catch (error) 
-    {
+    }
+    catch (error) {
       console.error(error)
       return "Error processing transaction."
     }
@@ -322,35 +267,29 @@ async function sendTxn(params, transactionHandler)
 }
 
 
-async function signTxn(params, keyPair) 
-{
-    const { recipient, amount } = params
-    if 
+async function signTxn(params, keyPair) {
+  const { recipient, amount } = params
+  if
     (
-      typeof params !== "object" ||
-      typeof recipient !== "string" ||
-      typeof amount !== "number"
-      
-    ) 
-    {
-      return "Invalid request."
-    } 
-    else 
-    {
-      const tx = new Transaction(recipient, amount)
-      Transaction.sign(tx, keyPair)
-      return { tx }
-    }
+    typeof params !== "object" ||
+    typeof recipient !== "string" ||
+    typeof amount !== "number"
+
+  ) {
+    return "Invalid request."
+  }
+  else {
+    const tx = new Transaction(recipient, amount)
+    Transaction.sign(tx, keyPair)
+    return { tx }
+  }
 }
 
 
-function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) 
-{
-  const handleJsonRpcRequest = async (request, reply) => 
-  {
+function rpc(PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) {
+  const handleJsonRpcRequest = async (request, reply) => {
     const { method, params, id } = request.body
-    const generateResponse = (result, id) =>
-    {
+    const generateResponse = (result, id) => {
       return { jsonrpc: '2.0', data: result, id: id }
     }
     let result
@@ -404,7 +343,7 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
         result = await getTxnByBlockHashAndIndex(params, bhashDB)
         break
       case 'sendTxn':
-        result = await sendTxn(params, transactionHandler)
+        result = await sendTxn(params, txHandler)
         break
       case 'signTxn':
         result = await signTxn(params, keyPair)
@@ -415,24 +354,19 @@ function rpc(PORT, client, transactionHandler, keyPair, stateDB, blockDB, bhashD
     return generateResponse(result, id)
   }
 
-  fastify.post('/jsonrpc', async (request, reply) => 
-  {
-  try 
-  {
-    const response = await handleJsonRpcRequest(request, reply)
-    return {response}
-  }
-  catch (error) 
-  {
-    return {error: {code: -32000, message: 'JSON-RPC error: ' + error.message}}
-  }
+  fastify.post('/jsonrpc', async (request, reply) => {
+    try {
+      const response = await handleJsonRpcRequest(request, reply)
+      return { response }
+    }
+    catch (error) {
+      return { error: { code: -32000, message: 'JSON-RPC error: ' + error.message } }
+    }
   })
 
   // Start the server
-  fastify.listen({ port: PORT }, (err) => 
-  {
-    if (err) 
-    {
+  fastify.listen({ port: PORT }, (err) => {
+    if (err) {
       console.error(err)
       process.exit(1)
     }

@@ -3,7 +3,7 @@
  * @param {any} data The data to include in the message.
  * @returns {string} A JSON object representation of the message.
  */
-function produceMessage(type, data) 
+function produceMsg(type, data) 
 {
     return JSON.stringify({ type, data });
 }
@@ -12,9 +12,9 @@ function produceMessage(type, data)
  * @param {string} message The message to send.
  * @param {Array} nodes An array of nodes to send the message to.
  */
-function sendMessage(message, nodes) 
+function sendMsg(msg, nodes) 
 {
-    nodes.forEach(node => node.socket.send(message));
+    nodes.forEach(node => node.socket.send(msg));
 }
 
-module.exports = { produceMessage, sendMessage };
+module.exports = { produceMsg, sendMsg };

@@ -10,9 +10,9 @@ const Block = require("../core/block")
 const Transaction = require("../core/transaction")
 const changeState = require("../core/state")
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT } = require("../config.json")
-const { produceMessage, sendMessage } = require("./message")
+const { produceMsg, sendMsg } = require("./message")
 const generateGenesisBlock = require("../core/genesis")
-const { addTransaction, clearDepreciatedTxns }= require("../core/txPool")
+const { addTx, clearDepreciatedTxns }= require("../core/txPool")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
 const { verifyBlock, updateDifficulty } = require("../consensus/consensus")
@@ -117,7 +117,7 @@ async function startServer(options)
                             chainInfo.latestBlock = newBlock
                             chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
                             fastify.log.info(`Block #${newBlock.blockNumber} synced, state transited.`)
-                            sendMessage(message, opened)
+                            sendMsg(message, opened)
                             if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
                             {
                                 ENABLE_CHAIN_REQUEST = false
@@ -148,7 +148,7 @@ async function startServer(options)
                     if (maxNonce + 1 !== transaction.nonce) return
                     fastify.log.info("New transaction received, broadcasted and added to pool.")
                     chainInfo.transactionPool.push(transaction)
-                    sendMessage(message, opened)
+                    sendMsg(message, opened)
                     break
 
                 case TYPE.REQUEST_BLOCK:
@@ -160,7 +160,7 @@ async function startServer(options)
                         if (blockNumber > 0 && blockNumber <= currentBlockNumber) 
                         {
                             const block = await blockDB.get( blockNumber.toString() )
-                            socket.send(produceMessage(TYPE.SEND_BLOCK, block))
+                            socket.send(produceMsg(TYPE.SEND_BLOCK, block))
                             fastify.log.info(`Sent block #${blockNumber} to ${requestAddress}.`)
                         }
                     }
@@ -188,7 +188,7 @@ async function startServer(options)
                             {
                                 node.socket.send
                                 (
-                                    produceMessage
+                                    produceMsg
                                     (
                                         TYPE.REQUEST_BLOCK,
                                         { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
@@ -244,7 +244,7 @@ async function startServer(options)
             {
                 node.socket.send
                 (
-                    produceMessage
+                    produceMsg
                     (
                         TYPE.REQUEST_BLOCK,
                         { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
@@ -257,7 +257,7 @@ async function startServer(options)
     }
 
     if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING)
-    if (ENABLE_RPC) rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTransaction, keyPair, stateDB, blockDB, bhashDB, codeDB)
+    if (ENABLE_RPC) rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
 }
 
 /**
@@ -276,8 +276,8 @@ function connect(MY_ADDRESS, address)
          * Open a connection to the socket and send a handshake message to all connected nodes.
          * */
         socket.on("open", async () => {
-            for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMessage(TYPE.HANDSHAKE, _address))
-            for (const node of opened) node.socket.send(produceMessage(TYPE.HANDSHAKE, address))
+            for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMsg(TYPE.HANDSHAKE, _address))
+            for (const node of opened) node.socket.send(produceMsg(TYPE.HANDSHAKE, address))
 
             if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) 
             {
@@ -301,11 +301,10 @@ function connect(MY_ADDRESS, address)
 /**
  * Broadcasts a transaction to other nodes.
 */
-async function sendTransaction(transaction) 
+async function sendTx(tx) 
 {
-    sendMessage(produceMessage(TYPE.CREATE_TRANSACTION, transaction), opened)
-    fastify.log.info("Sent one transaction.")
-    await addTransaction(transaction, chainInfo, stateDB)
+    sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
+    await addTx(tx, chainInfo, stateDB)
 }
 
 async function mine(publicKey, ENABLE_LOGGING) 
@@ -472,7 +471,7 @@ async function mine(publicKey, ENABLE_LOGGING)
                 // Update the new transaction pool (remove all the transactions that are no longer valid).
                 chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
 
-                sendMessage(produceMessage(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
+                sendMsg(produceMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
 
                 fastify.log.info(`Block #${chainInfo.latestBlock.blockNumber} mined and synced, state transited.`)
             } else {
