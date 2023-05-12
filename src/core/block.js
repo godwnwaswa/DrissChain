@@ -59,7 +59,7 @@ class Block {
     /**
      * Verifies transactions in the block and transists the state.
      * */
-    static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
+    static async(block, stateDB, codeDB, enableLogging = false) {
         for (const tx of block.transactions) {
             if (!(await Transaction.isValid(tx, stateDB))) return false
         }
@@ -84,8 +84,8 @@ class Block {
                 //new entry into the states object of the block; indicates 1st tx from this sender's address
                 states[txSenderAddress] = senderState
                 //for txns to EOA; there's just a single entry in code object
-                code[senderState.codeHash] = await codeDB.get(senderState.codeHash) 
-                if (senderState.codeHash !== EMPTY_HASH) return false 
+                code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
+                if (senderState.codeHash !== EMPTY_HASH) return false
                 states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
             } else {
                 //the sender's address has signed multiple txns in the block
@@ -100,7 +100,7 @@ class Block {
              * Every state object has its codeHash prop set to EMPTY_HASH, what actually triggers a smart contract is if the tx's 
              * additionalData object has its property `scBody` set! 
             */
-            if ( states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string" ) {
+            if (states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string") {
                 states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
                 code[states[txSenderAddress].codeHash] = tx.additionalData.scBody
             }
@@ -173,26 +173,21 @@ class Block {
     }
 
     static async hasValidTxOrder(block, stateDB) {
-        const nonces = {}
+        const nonces = {};
         for (const tx of block.transactions) {
-            const txSenderPubKey = Transaction.getPubKey(tx)
-            const txSenderAddress = SHA256(txSenderPubKey)
-            if (typeof nonces[txSenderAddress] === "undefined") {
-                const senderState = await stateDB.get(txSenderAddress)
-                nonces[txSenderAddress] = senderState.nonce
+            const txSenderAddress = SHA256(Transaction.getPubKey(tx));
+            if (!nonces[txSenderAddress]) {
+                nonces[txSenderAddress] = (await stateDB.get(txSenderAddress)).nonce;
             }
-            if (nonces[txSenderAddress] + 1 !== tx.nonce) return false
-            nonces[txSenderAddress]++
+            if (++nonces[txSenderAddress] !== tx.nonce) return false;
         }
-        return true
+        return true;
     }
 
     static hasValidGasLimit(block) {
-        let totalGas = 0n
-        for (const tx of block.transactions) {
-            totalGas += BigInt(tx.additionalData.contractGas || 0)
-        }
-        return totalGas <= BigInt(BLOCK_GAS_LIMIT)
+        const totalGas = block.transactions.reduce((acc, tx) =>
+            acc + BigInt(tx.additionalData.contractGas || 0), 0n);
+        return totalGas <= BigInt(BLOCK_GAS_LIMIT);
     }
 }
 
