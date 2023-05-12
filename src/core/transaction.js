@@ -8,12 +8,8 @@ const ec = new (require("elliptic").ec)("secp256k1")
 const { EMPTY_HASH } = require("../config.json")
 
 class Transaction {
-  constructor(
-    recipient = "",
-    amount = "0",
-    gas = '2000000000', //base gas fee
-    additionalData = {},
-    nonce = 0
+  constructor( recipient = "", amount = "0", gas = '2000000000', //base gas fee
+    additionalData = {}, nonce = 0
   ) {
     Object.assign(this, {
       recipient,
