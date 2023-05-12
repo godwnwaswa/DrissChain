@@ -183,47 +183,34 @@ const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo
 
 	const getValue = token => {
 		if (token.startsWith("$")) {
-			token = token.replace("$", "")
-			if (typeof memory[token] === "undefined") {
-				memory[token] = "0x0"
-			}
-			return memory[token]
-
-		} else if (token.startsWith("%")) {
-			token = token.replace("%", "")
-			if (typeof userArgs[parseInt(token)] === "undefined") {
-				return "0x0"
-			} else {
-				return bigIntable(userArgs[parseInt(token)]) ? "0x" + BigInt(userArgs[parseInt(token)]).toString(16) : "0x0"
-			}
-		} else {
-			return token
+		  const memToken = token.replace("$", "")
+		  return memory[memToken] || "0x0"
 		}
-	}
+		
+		if (token.startsWith("%")) {
+		  const argToken = parseInt(token.replace("%", ""))
+		  return bigIntable(userArgs[argToken]) ? `0x${BigInt(userArgs[argToken]).toString(16)}` : "0x0"
+		}
+		
+		return token
+	  }
 
 	const setMem = (key, value) => {
 		memory[key] = bigIntable(value) ? "0x" + BigInt(value).toString(16) : "0x0"
 	}
 
 	const setStorage = async (key, value) => {
-		if (!state[contractInfo.address]) {
-			const contractState = await stateDB.get(contractInfo.address)
-			state[contractInfo.address] = contractState
-		}
-		for (const key of (await storageDB.keys().all())) {
-			storage[key] = await storageDB.get(key)
-		}
+		state[contractInfo.address] = state[contractInfo.address] || await stateDB.get(contractInfo.address)
+		await Promise.all((await storageDB.keys().all()).map(async k => storage[k] = await storageDB.get(k)))
 		storage[key] = bigIntable(value) ? "0x" + BigInt(value).toString(16) : "0x0"
-	}
+	  }
 
 	const getStorage = async key => {
 		if (!state[contractInfo.address]) {
 			const contractState = await stateDB.get(contractInfo.address)
 			state[contractInfo.address] = contractState
 		}
-		for (const key of (await storageDB.keys().all())) {
-			storage[key] = await storageDB.get(key)
-		}
+		await Promise.all((await storageDB.keys().all()).map(async k => storage[k] = await storageDB.get(k)))
 		return storage[key] ? storage[key] : "0x0"
 	}
 
