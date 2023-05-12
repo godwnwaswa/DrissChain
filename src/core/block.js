@@ -59,7 +59,7 @@ class Block {
     /**
      * Verifies transactions in the block and transists the state.
      * */
-    static async(block, stateDB, codeDB, enableLogging = false) {
+    static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
         for (const tx of block.transactions) {
             if (!(await Transaction.isValid(tx, stateDB))) return false
         }
