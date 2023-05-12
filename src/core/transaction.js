@@ -7,6 +7,20 @@ const { createHash } = crypto
 const ec = new (require("elliptic").ec)("secp256k1")
 const { EMPTY_HASH } = require("../config.json")
 
+const pino = require('pino')
+const logger = pino({
+    transport: {
+        target: 'pino-pretty',
+        options: {
+            ignore: 'pid,hostname',
+        },
+    },
+})
+const fastify = require('fastify')({
+    logger: logger
+})
+
+
 class Transaction {
   constructor( recipient = "", amount = "0", gas = '2000000000', //base gas fee
     additionalData = {}, nonce = 0
@@ -73,18 +87,21 @@ class Transaction {
         
       )
     ) {
+      fastify.log.error('HINT: Invalid prop types.')
       return false
     }
     const senderPubKey = Transaction.getPubKey(tx)
     const senderAddress = createHash("sha256").update(senderPubKey).digest("hex")
     // sender is not part of the chain state
     if (!(await stateDB.keys().all()).includes(senderAddress)) {
+      fastify.log.error('HINT: Sender not in state.')
       return false
     }
     // stateDB tracks codeHash & balance
     const { balance, codeHash } = await stateDB.get(senderAddress)
-    //EMPTY_HASH signals contract deployment
+    //EMPTY_HASH & set bosysignals contract deployment
     if (codeHash !== EMPTY_HASH) {
+      fastify.log.error('HINT: Address is for a smart contract.')
       return false
     }
     return (
