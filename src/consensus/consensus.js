@@ -5,6 +5,20 @@ const { buildMerkleTree } = require("../core/merkle");
 const { BLOCK_REWARD, BLOCK_TIME } = require("../config.json");
 const { indexTxns } = require("../utils/utils");
 
+
+const pino = require('pino')
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      ignore: 'pid,hostname',
+    },
+  },
+})
+const fastify = require('fastify')({
+  logger : logger
+})
+
 /**
  * Checks if a block is valid under specified conditions.
 */

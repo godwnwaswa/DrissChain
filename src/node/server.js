@@ -12,7 +12,7 @@ const changeState = require("../core/state")
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT } = require("../config.json")
 const { produceMsg, sendMsg } = require("./message")
 const generateGenesisBlock = require("../core/genesis")
-const { addTx, clearDepreciatedTxns }= require("../core/txPool")
+const { addTx, clearDepreciatedTxns } = require("../core/txPool")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
 const { verifyBlock, updateDifficulty } = require("../consensus/consensus")
@@ -20,7 +20,7 @@ const { parseJSON, indexTxns } = require("../utils/utils")
 const drisscript = require("../core/runtime")
 const { buildMerkleTree } = require("../core/merkle")
 
-const opened    = []  // Addresses and sockets from connected nodes.
+const opened = []  // Addresses and sockets from connected nodes.
 const connected = []  // Addresses from connected nodes.
 let connectedNodes = 0
 
@@ -31,7 +31,7 @@ let mined = false // This will be used to inform the node that another node has 
 // Some chain info cache
 const chainInfo = {
     transactionPool: [],
-    latestBlock: generateGenesisBlock(), 
+    latestBlock: generateGenesisBlock(),
     latestSyncBlock: null,
     checkedBlock: {},
     tempStates: {},
@@ -45,23 +45,22 @@ const codeDB = new Level(__dirname + "/../log/codeStore")
 
 const pino = require('pino')
 const logger = pino({
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      ignore: 'pid,hostname',
+    transport: {
+        target: 'pino-pretty',
+        options: {
+            ignore: 'pid,hostname',
+        },
     },
-  },
 })
 
 const fastify = require('fastify')({
-  logger : logger
+    logger: logger
 })
 
 /**
  * Starts a node at a specified WS address.
  * */
-async function startServer(options) 
-{
+async function startServer(options) {
     const { PORT = 3000, RPC_PORT = 5000, PEERS = [], MAX_PEERS = 10, MY_ADDRESS = "ws://localhost:3000", ENABLE_MINING = false, ENABLE_LOGGING = false, ENABLE_RPC = false, PRIVATE_KEY = null, ENABLE_CHAIN_REQUEST = false } = options;
     const privateKey = PRIVATE_KEY || ec.genKeyPair().getPrivate("hex");
     const keyPair = ec.keyFromPrivate(privateKey, "hex");
@@ -75,48 +74,37 @@ async function startServer(options)
     const server = new WS.Server({ port: PORT })
     fastify.log.info(`Started WS server on PORT ${PORT.toString()}`)
 
-    server.on("connection", async (socket, req) => 
-    {
+    server.on("connection", async (socket, req) => {
         /**
          * The message handler
-         * */ 
-        socket.on("message", async message => 
-        {
-            const _message = parseJSON(message) 
-            switch (_message.type) 
-            {
+         * */
+        socket.on("message", async message => {
+            const _message = parseJSON(message)
+            switch (_message.type) {
                 case TYPE.NEW_BLOCK:
                     const newBlock = _message.data
-                    if (!chainInfo.checkedBlock[newBlock.hash]) 
-                    {
+                    if (!chainInfo.checkedBlock[newBlock.hash]) {
                         chainInfo.checkedBlock[newBlock.hash] = true
-                    } 
-                    else
-                    { 
-                        return 
                     }
-
-                    if (
-                        newBlock.parentHash !== chainInfo.latestBlock.parentHash &&
-                        (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))
-                    ) 
-                    {
+                    else {
+                        return
+                    }
+                    fastify.log.info("NEW_BLOCK from peer. Verifying...")
+                    if (newBlock.parentHash !== chainInfo.latestBlock.parentHash && (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))) {
                         chainInfo.checkedBlock[newBlock.hash] = true
-                        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) 
-                        {
-                            fastify.log.info("New block received.")
-                            if (ENABLE_MINING) 
-                            {
+                        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
+                            fastify.log.info("Block verified. Syncing to the chain...")
+                            if (ENABLE_MINING) {
                                 mined = true //check their chain length & sync if > your chain else mine
-                                worker.kill() 
-                                worker = fork(`${__dirname}/../miner/worker.js`) 
+                                worker.kill()
+                                worker = fork(`${__dirname}/../miner/worker.js`)
                             }
                             await updateDifficulty(newBlock, chainInfo, blockDB)
                             await blockDB.put(newBlock.blockNumber.toString(), newBlock)
                             await bhashDB.put(newBlock.hash, newBlock.blockNumber.toString())
                             chainInfo.latestBlock = newBlock
                             chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
-                            fastify.log.info(`Block #${newBlock.blockNumber} synced, state transited.`)
+                            fastify.log.info(`Synced at height #${newBlock.blockNumber}, chain state transited.`)
                             sendMsg(message, opened)
                             // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
                             // {
@@ -125,9 +113,9 @@ async function startServer(options)
                         }
                     }
                     break
-                
+
                 case TYPE.CREATE_TRANSACTION:
-                    if (ENABLE_CHAIN_REQUEST) break 
+                    if (ENABLE_CHAIN_REQUEST) break
 
                     const transaction = _message.data
                     if (!(await Transaction.isValid(transaction, stateDB))) break
@@ -136,12 +124,10 @@ async function startServer(options)
                     const txSenderAddress = SHA256(txSenderPubkey)
                     if (!(await stateDB.keys().all()).includes(txSenderAddress)) break
                     let maxNonce = 0
-                    for (const tx of chainInfo.transactionPool) 
-                    {
+                    for (const tx of chainInfo.transactionPool) {
                         const poolTxSenderPubkey = Transaction.getPubKey(transaction)
                         const poolTxSenderAddress = SHA256(poolTxSenderPubkey)
-                        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) 
-                        {
+                        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) {
                             maxNonce = tx.nonce
                         }
                     }
@@ -152,58 +138,53 @@ async function startServer(options)
                     break
 
                 case TYPE.REQUEST_BLOCK:
-                    if (!ENABLE_CHAIN_REQUEST) 
-                    {
+                    if (!ENABLE_CHAIN_REQUEST) {
                         const { blockNumber, requestAddress } = _message.data
                         const socket = opened.find(node => node.address === requestAddress).socket
                         const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
-                        if (blockNumber > 0 && blockNumber <= currentBlockNumber) 
-                        {
-                            const block = await blockDB.get( blockNumber.toString() )
+                        if (blockNumber > 0 && blockNumber <= currentBlockNumber) {
+                            const block = await blockDB.get(blockNumber.toString())
                             socket.send(produceMsg(TYPE.SEND_BLOCK, block))
                             fastify.log.info(`Sent block #${blockNumber} to ${requestAddress}.`)
                         }
                     }
                     break
-                
+
                 case TYPE.SEND_BLOCK:
                     const block = _message.data
-                    if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) 
-                    {
-                        if ( chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) 
-                        {
+                    if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
+                        fastify.log.info("REQUEST_BLOCK from peer. Verifying...")
+                        if (chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
+                            fastify.log.info("Block verified. Syncing to the chain...")
                             currentSyncBlock += 1
                             await blockDB.put(block.blockNumber.toString(), block)
                             await bhashDB.put(block.hash, block.blockNumber.toString())
-                            if (!chainInfo.latestSyncBlock) 
-                            {
-                                chainInfo.latestSyncBlock = block  
+                            if (!chainInfo.latestSyncBlock) {
+                                chainInfo.latestSyncBlock = block
                                 await changeState(block, stateDB, codeDB, ENABLE_LOGGING)
                             }
-                            chainInfo.latestBlock = block 
-                            await updateDifficulty(block, chainInfo, blockDB) 
-                            fastify.log.info(`Synced block #${block.blockNumber}`)
+                            chainInfo.latestBlock = block
+                            await updateDifficulty(block, chainInfo, blockDB)
+                            fastify.log.info(`Synced at height #${block.blockNumber}, chain state transited.`)
 
-                            for (const node of opened) 
-                            {
+                            for (const node of opened) {
                                 node.socket.send
-                                (
-                                    produceMsg
                                     (
-                                        TYPE.REQUEST_BLOCK,
-                                        { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
+                                        produceMsg
+                                            (
+                                                TYPE.REQUEST_BLOCK,
+                                                { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
+                                            )
                                     )
-                                )
-                                await new Promise(r => setTimeout(r, 5000)) 
+                                await new Promise(r => setTimeout(r, 5000))
                             }
                         }
                     }
                     break
-                
+
                 case TYPE.HANDSHAKE:
                     const address = _message.data
-                    if (connectedNodes <= MAX_PEERS) 
-                    {
+                    if (connectedNodes <= MAX_PEERS) {
                         connect(MY_ADDRESS, address)
                     }
             }
@@ -211,47 +192,41 @@ async function startServer(options)
     })
 
     if (!ENABLE_CHAIN_REQUEST) {
-        if ((await blockDB.keys().all()).length === 0) 
-        {
+        if ((await blockDB.keys().all()).length === 0) {
             await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH })
             await blockDB.put(chainInfo.latestBlock.blockNumber.toString(), chainInfo.latestBlock)
             await bhashDB.put(chainInfo.latestBlock.hash, chainInfo.latestBlock.blockNumber.toString())
             await changeState(chainInfo.latestBlock, stateDB, codeDB)
         } else {
-            chainInfo.latestBlock = await blockDB.get( Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString() )
+            chainInfo.latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())
             chainInfo.difficulty = chainInfo.latestBlock.difficulty
         }
     }
 
-    PEERS.forEach(peer => connect(MY_ADDRESS, peer)) 
+    PEERS.forEach(peer => connect(MY_ADDRESS, peer))
     let currentSyncBlock = 1
-    if (ENABLE_CHAIN_REQUEST) 
-    {
+    if (ENABLE_CHAIN_REQUEST) {
         const blockNumbers = await blockDB.keys().all()
-        if (blockNumbers.length !== 0) 
-        {
+        if (blockNumbers.length !== 0) {
             currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
         }
 
-        if (currentSyncBlock === 1) 
-        {
+        if (currentSyncBlock === 1) {
             await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH })
         }
 
-        setTimeout(async () => 
-        {
-            for (const node of opened) 
-            {
+        setTimeout(async () => {
+            for (const node of opened) {
                 node.socket.send
-                (
-                    produceMsg
                     (
-                        TYPE.REQUEST_BLOCK,
-                        { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
+                        produceMsg
+                            (
+                                TYPE.REQUEST_BLOCK,
+                                { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }
+                            )
                     )
-                )
 
-                await new Promise(r => setTimeout(r, 5000)) 
+                await new Promise(r => setTimeout(r, 5000))
             }
         }, 5000)
     }
@@ -263,14 +238,12 @@ async function startServer(options)
 /**
  * Connects to a WebSocket server at the specified address.
  * */
-function connect(MY_ADDRESS, address) 
-{
+function connect(MY_ADDRESS, address) {
     /**
      * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
      * */
-    if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) 
-    {
-        const socket = new WS(address) 
+    if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
+        const socket = new WS(address)
 
         /**
          * Open a connection to the socket and send a handshake message to all connected nodes.
@@ -279,12 +252,10 @@ function connect(MY_ADDRESS, address)
             for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMsg(TYPE.HANDSHAKE, _address))
             for (const node of opened) node.socket.send(produceMsg(TYPE.HANDSHAKE, address))
 
-            if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) 
-            {
+            if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) {
                 opened.push({ socket, address })
             }
-            if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) 
-            {
+            if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
                 connected.push(address)
                 connectedNodes++
                 fastify.log.info(`Connected to ${address}.`)
@@ -301,18 +272,14 @@ function connect(MY_ADDRESS, address)
 /**
  * Broadcasts a transaction to other nodes.
 */
-async function sendTx(tx) 
-{
+async function sendTx(tx) {
     sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
     await addTx(tx, chainInfo, stateDB)
 }
 
-async function mine(publicKey, ENABLE_LOGGING) 
-{
-    function mine(block, difficulty) 
-    {
-        return new Promise((resolve, reject) => 
-        {
+async function mine(publicKey, ENABLE_LOGGING) {
+    function mine(block, difficulty) {
+        return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result))
             worker.send({ type: "MINE", data: [block, difficulty] })
         })
@@ -320,14 +287,14 @@ async function mine(publicKey, ENABLE_LOGGING)
 
     // Create a new block.
     const block = new Block
-    (
-        chainInfo.latestBlock.blockNumber + 1, 
-        Date.now(), 
-        [], // Will add transactions down here 
-        chainInfo.difficulty, 
-        chainInfo.latestBlock.hash,
-        SHA256(publicKey)
-    )
+        (
+            chainInfo.latestBlock.blockNumber + 1,
+            Date.now(),
+            [], // Will add transactions down here 
+            chainInfo.difficulty,
+            chainInfo.latestBlock.hash,
+            SHA256(publicKey)
+        )
 
     // Collect a list of transactions to mine
     const transactionsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
@@ -354,7 +321,7 @@ async function mine(publicKey, ENABLE_LOGGING)
                 skipped[txSenderAddress] = true
                 continue
             }
-    
+
             states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
         } else {
             if (states[txSenderAddress].codeHash !== EMPTY_HASH) {
@@ -369,12 +336,12 @@ async function mine(publicKey, ENABLE_LOGGING)
             states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
             code[EMPTY_HASH] = ""
         }
-    
+
         if (existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
             states[tx.recipient] = await stateDB.get(tx.recipient)
             code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
         }
-    
+
         states[tx.recipient].balance = (BigInt(states[tx.recipient].balance) + BigInt(tx.amount)).toString()
 
         // Contract deployment
@@ -403,8 +370,8 @@ async function mine(publicKey, ENABLE_LOGGING)
         // Contract execution
         if (states[tx.recipient].codeHash !== EMPTY_HASH) {
             const contractInfo = { address: tx.recipient }
-            
-            const [ newState, newStorage ] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
+
+            const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
 
             for (const account of Object.keys(newState)) {
                 states[account] = newState[account]
@@ -436,7 +403,7 @@ async function mine(publicKey, ENABLE_LOGGING)
                     states[result.coinbase] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
                     code[EMPTY_HASH] = ""
                 }
-            
+
                 if (existedAddresses.includes(result.coinbase) && !states[result.coinbase]) {
                     states[result.coinbase] = await stateDB.get(result.coinbase)
                     code[states[result.coinbase].codeHash] = await codeDB.get(states[result.coinbase].codeHash)
@@ -452,19 +419,19 @@ async function mine(publicKey, ENABLE_LOGGING)
                 for (const address in storage) {
                     const storageDB = new Level(__dirname + "/../log/accountStore/" + address)
                     const keys = Object.keys(storage[address])
-        
+
                     states[address].storageRoot = buildMerkleTree(keys.map(key => key + " " + storage[address][key])).val
-        
+
                     for (const key of keys) {
                         await storageDB.put(key, storage[address][key])
                     }
-        
+
                     await storageDB.close()
                 }
-        
+
                 for (const account of Object.keys(states)) {
                     await stateDB.put(account, states[account])
-        
+
                     await codeDB.put(states[account].codeHash, code[states[account].codeHash])
                 }
 
@@ -486,14 +453,12 @@ async function mine(publicKey, ENABLE_LOGGING)
         .catch(err => fastify.log.error(err))
 }
 
-function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) 
-{
+function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) {
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
 
     setInterval(async () => {
-        if (mining || length !== chainInfo.latestBlock.blockNumber) 
-        {
+        if (mining || length !== chainInfo.latestBlock.blockNumber) {
             mining = false
             length = chainInfo.latestBlock.blockNumber
             if (!ENABLE_CHAIN_REQUEST) await mine(publicKey, ENABLE_LOGGING)
