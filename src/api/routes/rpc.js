@@ -46,13 +46,13 @@ const Transaction =  {
     type: 'object',
     properties: {
         recipient: {type : 'string'},
-        amount: {type : 'integer'},
-        gas: {type : 'integer'},
+        amount: {type : 'string'},
+        gas: {type : 'string'},
         additionalData: {
             type : 'object',
             properties: {}
         },
-        nonce: {type : 'integer'},
+        nonce: {type : 'number'},
         signature: {
             type : 'object',
             properties: {
