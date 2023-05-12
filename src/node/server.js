@@ -52,12 +52,11 @@ const logger = pino({
         },
     },
 })
-
 const fastify = require('fastify')({
     logger: logger
 })
 /**
- * Starts a node at a specified WS address.
+ * Starts a Drissium node at a specified WS address.
  * */
 const startServer = async options => {
     const { 
@@ -204,11 +203,19 @@ const startServer = async options => {
             currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
         }
         if (currentSyncBlock === 1) {
-            await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH })
+            await stateDB.put(FIRST_ACCOUNT, { 
+                balance: INITIAL_SUPPLY, 
+                codeHash: EMPTY_HASH, 
+                nonce: 0, 
+                storageRoot: EMPTY_HASH 
+            })
         }
         setTimeout(async () => {
             for (const node of opened) {
-                node.socket.send(produceMsg(TYPE.REQUEST_BLOCK, { blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }))
+                node.socket.send(produceMsg(TYPE.REQUEST_BLOCK, { 
+                    blockNumber: currentSyncBlock, 
+                    requestAddress: MY_ADDRESS 
+                }))
                 await new Promise(r => setTimeout(r, 5000))
             }
         }, 5000)
@@ -221,7 +228,7 @@ const startServer = async options => {
 /**
  * Connects to a WebSocket server at the specified address.
  * */
-function connect(MY_ADDRESS, address) {
+const connect = (MY_ADDRESS, address) => {
     /**
      * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
      * */
@@ -255,14 +262,14 @@ function connect(MY_ADDRESS, address) {
 /**
  * Broadcasts a transaction to other nodes.
 */
-async function sendTx(tx) {
+const sendTx = async tx => {
     sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
     await addTx(tx, chainInfo, stateDB)
 }
 
-async function mine(publicKey, ENABLE_LOGGING) {
+const mine = async (publicKey, ENABLE_LOGGING) => {
 
-    function mine(block, difficulty) {
+    const mine = (block, difficulty) => {
         return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result))
             worker.send({ type: "MINE", data: [block, difficulty] })
@@ -386,7 +393,7 @@ async function mine(publicKey, ENABLE_LOGGING) {
         .catch(err => fastify.log.error(err))
 }
 
-function loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) {
+const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) => {
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
 
