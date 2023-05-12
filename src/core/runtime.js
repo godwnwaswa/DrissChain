@@ -5,49 +5,7 @@ const { EMPTY_HASH } = require("../config.json")
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 
 /**
- 
- * ------------------------------------------------------------------------------------------------------------- *
- * Processes the input instructions by splitting them into an array of individual commands, removing any white 
- * spaces and empty lines.
- * ------------------------------------------------------------------------------------------------------------- *
- 
-	KEY CODE EXPLANATION
- *---------------------------------------------------------------------------------------------------------------
- * The `input` argument is split into an array of individual instructions using the `split()` function, which 
- * separates the input by newline characters. The `map()` function is used to remove any leading or trailing 
- * white space from each instruction, and the `filter()` function removes any empty instructions from the array. 
- * The resulting array of instructions is stored in the `instructions` variable.
- * --------------------------------------------------------------------------------------------------------------
- * 
- * --------------------------------------------------------------------------------------------------------------
- * The current instruction is split into a command and its arguments using the `split()` function, and the 
- * resulting values are stored in the `opcode` and `data` variables, respectively.
- * --------------------------------------------------------------------------------------------------------------
- * 
- * ------------------------------------------------------------------------------------------------------------- *
- * It proceeds to execute the instructions in the input by looping over the array of instructions                *
- * using a `while` loop. During each iteration, it checks if there is enough gas to execute the current          *
- * instruction, and if it is not the `stop` or `revert` instruction.                                             *
- * ------------------------------------------------------------------------------------------------------------- *
- 
- * ------------------------------------------------------------------------------------------------------------- *
- * It then splits the current instruction into a command and its arguments, before switching on the              *
- * command type using a `switch` statement. The available commands include memory-related instructions like      *
- * `set`, `add`, `sub`, `mul`, `div`, `mod`, `and`, `or`, `xor`, `ls`, `rs`, `not`, `gtr`, `lss`, `geq`, `leq`,  * 
- * `equ`, and `neq`.                                                                                             *
- * ------------------------------------------------------------------------------------------------------------- *
- 
- * ------------------------------------------------------------------------------------------------------------- *
- * Each of these instructions perform a different operation on the `memory` object, which acts as a buffer for   *
- * holding the current state of the application's memory. Some of these operations include adding, subtracting,  *
- * and multiplying values stored in `memory`.                                                                    *
- * ------------------------------------------------------------------------------------------------------------- *
- 
- * ------------------------------------------------------------------------------------------------------------- *
- * It finally checks if there are additional data arguments passed to the function, before continuing with       *
- * each iteration. At the end of the loop, the function returns the final state of the `memory` object.          *
- * ------------------------------------------------------------------------------------------------------------- *
-
+ * A script that handles logic in smart contracts.
  * */
 const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo, contractInfo, enableLogging = false) => {
 	const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
@@ -223,16 +181,16 @@ const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo
 
 	if (ptr < instructions.length && instructions[ptr].trim() === "revert") return originalState // Revert all changes made to state
 
-	function getValue(token) {
+	const getValue = token => {
 		if (token.startsWith("$")) {
 			token = token.replace("$", "")
 			if (typeof memory[token] === "undefined") {
 				memory[token] = "0x0"
 			}
 			return memory[token]
+
 		} else if (token.startsWith("%")) {
 			token = token.replace("%", "")
-
 			if (typeof userArgs[parseInt(token)] === "undefined") {
 				return "0x0"
 			} else {
@@ -270,7 +228,6 @@ const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo
 	}
 
 	await storageDB.close()
-
 	return [state, storage]
 }
 

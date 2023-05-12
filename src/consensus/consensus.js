@@ -33,8 +33,7 @@ async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging =
     )
 }
 
-async function updateDifficulty(newBlock, chainInfo, blockDB) 
-{
+const updateDifficulty = async (newBlock, chainInfo, blockDB) => {
     if (newBlock.blockNumber % 10 === 0) 
     {
         const oldBlock = await blockDB.get((newBlock.blockNumber - 9).toString());
