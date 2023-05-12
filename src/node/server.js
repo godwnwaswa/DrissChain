@@ -30,7 +30,7 @@ let mined = false // This will be used to inform the node that another node has 
 
 // Some chain info cache
 const chainInfo = {
-    transactionPool: [],
+    txPool: [],
     latestBlock: generateGenesisBlock(),
     latestSyncBlock: null,
     checkedBlock: {},
@@ -89,7 +89,11 @@ const startServer = async options => {
                     else {
                         return
                     }
-                    fastify.log.info("NEW_BLOCK from peer. Verifying...")
+
+                    if (!ENABLE_MINING){
+                        fastify.log.info("NEW_BLOCK* from peer. Verifying...")
+                    }
+                    
                     if (newBlock.parentHash !== chainInfo.latestBlock.parentHash && (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))) {
                         chainInfo.checkedBlock[newBlock.hash] = true
                         if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
@@ -103,7 +107,7 @@ const startServer = async options => {
                             await blockDB.put(newBlock.blockNumber.toString(), newBlock)
                             await bhashDB.put(newBlock.hash, newBlock.blockNumber.toString())
                             chainInfo.latestBlock = newBlock
-                            chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
+                            chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
                             fastify.log.info(`Synced at height #${newBlock.blockNumber}, chain state transited.`)
                             sendMsg(message, opened)
                             // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
@@ -123,7 +127,7 @@ const startServer = async options => {
                     if (!(await stateDB.keys().all()).includes(txSenderAddress)) break
 
                     let maxNonce = 0
-                    for (const tx of chainInfo.transactionPool) {
+                    for (const tx of chainInfo.txPool) {
                         const poolTxSenderPubkey = Transaction.getPubKey(transaction)
                         const poolTxSenderAddress = SHA256(poolTxSenderPubkey)
                         if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) {
@@ -132,7 +136,7 @@ const startServer = async options => {
                     }
                     if (maxNonce + 1 !== transaction.nonce) return
                     fastify.log.info("New transaction received, broadcasted and added to pool.")
-                    chainInfo.transactionPool.push(transaction)
+                    chainInfo.txPool.push(transaction)
                     sendMsg(message, opened)
                     break
 
@@ -144,7 +148,7 @@ const startServer = async options => {
                         if (blockNumber > 0 && blockNumber <= currentBlockNumber) {
                             const block = await blockDB.get(blockNumber.toString())
                             socket.send(produceMsg(TYPE.SEND_BLOCK, block))
-                            fastify.log.info(`Sent block #${blockNumber} to ${requestAddress}.`)
+                            fastify.log.info(`SEND_BLOCK* at height #${blockNumber} to ${requestAddress}.`)
                         }
                     }
                     break
@@ -152,7 +156,7 @@ const startServer = async options => {
                 case TYPE.SEND_BLOCK:
                     const block = _message.data
                     if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
-                        fastify.log.info("REQUEST_BLOCK from peer. Verifying...")
+                        fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")
                         if (chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
                             fastify.log.info("Block verified. Syncing to the chain...")
                             currentSyncBlock += 1
@@ -234,7 +238,6 @@ const connect = (MY_ADDRESS, address) => {
      * */
     if (!connected.find(peerAddress => peerAddress === address) && address !== MY_ADDRESS) {
         const socket = new WS(address)
-
         /**
          * Open a connection to the socket and send a handshake message to all connected nodes.
          * */
@@ -282,7 +285,7 @@ const mine = async (publicKey, ENABLE_LOGGING) => {
     const transactionsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
     let totalContractGas = 0n, totalTxGas = 0n
     const existedAddresses = await stateDB.keys().all()
-    for (const tx of chainInfo.transactionPool) {
+    for (const tx of chainInfo.txPool) {
         if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
         const txSenderPubkey = Transaction.getPubKey(tx)
         const txSenderAddress = SHA256(txSenderPubkey)
@@ -380,9 +383,9 @@ const mine = async (publicKey, ENABLE_LOGGING) => {
                     await codeDB.put(states[account].codeHash, code[states[account].codeHash])
                 }
                 // Update the new transaction pool (remove all the transactions that are no longer valid).
-                chainInfo.transactionPool = await clearDepreciatedTxns(chainInfo, stateDB)
+                chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
                 sendMsg(produceMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
-                fastify.log.info(`Block mined at height #${chainInfo.latestBlock.blockNumber}. Synced chain & state transited.`)
+                fastify.log.info(`NEW_BLOCK* mined. Synced at height #${chainInfo.latestBlock.blockNumber}, chain state transited.`)
             } else {
                 mined = false
             }

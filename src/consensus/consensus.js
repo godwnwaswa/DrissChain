@@ -22,23 +22,15 @@ const fastify = require('fastify')({
 /**
  * Checks if a block is valid under specified conditions.
 */
-async function verifyBlock(newBlock, chainInfo, stateDB, codeDB, enableLogging = false) 
-{
+const verifyBlock = async (newBlock, chainInfo, stateDB, codeDB, enableLogging = false) => {
     return (
-        Block.hasValidPropTypes(newBlock) &&
-        SHA256(
-            newBlock.blockNumber.toString()       + 
-            newBlock.timestamp.toString()         + 
-            newBlock.txRoot                       + 
-            newBlock.difficulty.toString()        +
-            chainInfo.latestBlock.hash            +
-            newBlock.nonce.toString()
-        ) === newBlock.hash &&
-        chainInfo.latestBlock.hash === newBlock.parentHash &&
-        newBlock.hash.startsWith("00000" + Array(Math.floor(log16(chainInfo.difficulty)) + 1).join("0")) &&
-        newBlock.difficulty === chainInfo.difficulty &&
-        await Block.hasValidTxOrder(newBlock, stateDB) &&
-        newBlock.timestamp > chainInfo.latestBlock.timestamp &&
+        Block.hasValidPropTypes(newBlock) && 
+        SHA256(`${newBlock.blockNumber.toString()}${newBlock.timestamp.toString()}${newBlock.txRoot}${newBlock.difficulty.toString()}${chainInfo.latestBlock.hash}${newBlock.nonce.toString()}`) === newBlock.hash &&
+        chainInfo.latestBlock.hash === newBlock.parentHash && 
+        newBlock.hash.startsWith("00000" + Array(Math.floor(log16(chainInfo.difficulty)) + 1).join("0")) && 
+        newBlock.difficulty === chainInfo.difficulty && 
+        await Block.hasValidTxOrder(newBlock, stateDB) && 
+        newBlock.timestamp > chainInfo.latestBlock.timestamp && 
         newBlock.timestamp < Date.now() &&
         newBlock.blockNumber - 1 === chainInfo.latestBlock.blockNumber &&
         buildMerkleTree(indexTxns(newBlock.transactions)).val === newBlock.txRoot &&
