@@ -17,10 +17,11 @@ const fastify = require('fastify')({
   logger : logger
 })
 const addTx = async (tx, chainInfo, stateDB) => {
-    fastify.log.info("One tx received on the blockchain.")
+    fastify.log.info("A tx received on the blockchain.")
     // Transactions are weakly verified when added to the pool (no state checking), but will be fully checked in block production.
-    if (!(await Transaction.isValid(tx, stateDB)) || BigInt(tx.additionalData.contractGas || 0) > BigInt(BLOCK_GAS_LIMIT)) {
-        fastify.log.error("Failed to add one tx to pool. Tx invalid.")
+    const { valid, msg} = await Transaction.isValid(tx, stateDB)
+    if (!(valid) || BigInt(tx.additionalData.contractGas || 0) > BigInt(BLOCK_GAS_LIMIT)) {
+        fastify.log.error(`Failed to add the tx to pool. ${msg}`)
         return
     }
 
@@ -30,7 +31,7 @@ const addTx = async (tx, chainInfo, stateDB) => {
     const txSenderAddress = SHA256(txSenderPubkey)
 
     if (!(await stateDB.keys().all()).includes(txSenderAddress)) {
-        fastify.log.error("Failed to add one tx to pool. Sender address non-existent.")
+        fastify.log.error("Failed to add the tx to pool. Sender address non-existent.")
         return
     }
 
@@ -44,18 +45,16 @@ const addTx = async (tx, chainInfo, stateDB) => {
         }
     }
     if (maxNonce + 1 !== tx.nonce) {
-        fastify.log.error("Failed to add 1 tx to pool. Invalid nonce.")
+        fastify.log.error("Failed to add the tx to pool. Invalid nonce.")
         return
     }
     txPool.push(tx)
-    fastify.log.info("Successfully added one tx to pool.")
+    fastify.log.info("Added the tx to the txPool.")
 }
 
-async function clearDepreciatedTxns(chainInfo, stateDB) {
-    const txPool = chainInfo.txPool
+const clearDepreciatedTxns = async (chainInfo, stateDB) => { 
     const newTxPool = [], skipped = {}, maxNonce = {}
-
-    for (const tx of txPool) {
+    for (const tx of chainInfo.txPool) {
         const txSenderPubkey = Transaction.getPubKey(tx)
         const txSenderAddress = SHA256(txSenderPubkey)
         if (skipped[txSenderAddress]) continue
@@ -64,10 +63,13 @@ async function clearDepreciatedTxns(chainInfo, stateDB) {
             maxNonce[txSenderAddress] = senderState.nonce
         }
         // Weak-checking
-        if (Transaction.isValid(tx, stateDB) && tx.nonce - 1 === maxNonce[txSenderAddress]) {
+        const { valid, msg} = await Transaction.isValid(tx, stateDB)
+        
+        if (valid && tx.nonce - 1 === maxNonce[txSenderAddress]) {
+            fastify.log.log(msg)
             newTxPool.push(tx)
             maxNonce[txSenderAddress] = tx.nonce
-        }
+        } else{ fastify.log.error(msg)}
     }
     return newTxPool
 }
