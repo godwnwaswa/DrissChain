@@ -9,7 +9,7 @@ const { fork } = require("child_process")
 const Block = require("../core/block")
 const Transaction = require("../core/transaction")
 const changeState = require("../core/state")
-const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT } = require("../config.json")
+const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT, BLOCK_TIME } = require("../config.json")
 const { produceMsg, sendMsg } = require("./message")
 const generateGenesisBlock = require("../core/genesis")
 const { addTx, clearDepreciatedTxns } = require("../core/txPool")
@@ -121,7 +121,9 @@ const startServer = async options => {
                 case TYPE.CREATE_TRANSACTION:
                     if (ENABLE_CHAIN_REQUEST) break
                     const transaction = _message.data
-                    if (!(await Transaction.isValid(transaction, stateDB))) break
+                    const {valid, msg} = await Transaction.isValid(transaction, stateDB)
+                    fastify.log.info(msg)
+                    if (!valid) break
                     const txSenderPubkey = Transaction.getPubKey(transaction)
                     const txSenderAddress = SHA256(txSenderPubkey)
                     if (!(await stateDB.keys().all()).includes(txSenderAddress)) break
@@ -225,12 +227,15 @@ const startServer = async options => {
         }, 5000)
     }
 
-    if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING)
-    if (ENABLE_RPC) rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
+    if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME)
+    if (ENABLE_RPC){
+        const main = rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
+        main(fastify)
+    }
+    
 }
-
 /**
- * Connects to a WebSocket server at the specified address.
+ * Connects to a WS server at the specified address.
  * */
 const connect = (MY_ADDRESS, address) => {
     /**
@@ -261,7 +266,6 @@ const connect = (MY_ADDRESS, address) => {
     }
     return true
 }
-
 /**
  * Broadcasts a transaction to other nodes.
 */
@@ -396,7 +400,7 @@ const mine = async (publicKey, ENABLE_LOGGING) => {
         .catch(err => fastify.log.error(err))
 }
 
-const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000) => {
+const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME) => {
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
 
@@ -406,7 +410,7 @@ const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, time = 10000)
             length = chainInfo.latestBlock.blockNumber
             if (!ENABLE_CHAIN_REQUEST) await mine(publicKey, ENABLE_LOGGING)
         }
-    }, time)
+    }, BLOCK_TIME)
 }
 
 module.exports = { startServer }

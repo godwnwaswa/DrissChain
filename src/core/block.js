@@ -9,6 +9,7 @@ const { buildMerkleTree } = require("./merkle")
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH } = require("../config.json")
 const drisscript = require("./runtime")
 const { indexTxns } = require("../utils/utils")
+const { default: fastify } = require('fastify')
 
 class Block {
     constructor(
@@ -61,7 +62,12 @@ class Block {
      * */
     static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
         for (const tx of block.transactions) {
-            if (!(await Transaction.isValid(tx, stateDB))) return false
+            const {valid, msg} = await Transaction.isValid(tx, stateDB)
+            
+            if (!valid) {
+                fastify.log.error(msg)
+                return false
+            } else {fastify.log.log(msg)}
         }
 
         // Get all existing addresses
