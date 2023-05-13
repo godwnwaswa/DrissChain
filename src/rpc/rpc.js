@@ -1,7 +1,6 @@
 "use strict"
 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
-
 const Transaction = require("../core/transaction")
 const pino = require('pino')
 const logger = pino({
@@ -13,31 +12,31 @@ const logger = pino({
   },
 })
 const fastify = require('fastify')({
-  logger: logger
+  logger: false
 })
 
-async function getBlockNumber(blockDB) {
+const getBlockNumber = async blockDB => {
   return { blockNumber: Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))) }
 }
 
-function getAddress(client) {
+
+const getAddress = client => {
   return { address: SHA256(client.publicKey) }
 }
 
-async function getWork(blockDB) {
+const getWork = async blockDB => {
   const latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())
   return { hash: latestBlock.hash, nonce: latestBlock.nonce }
 }
 
-function getMining(client) {
+const getMining = client => {
   return { mining: client.mining }
 }
 
-async function getBlockByHash(params, bhashDB, blockDB) {
+const getBlockByHash = async (params, bhashDB, blockDB) => {
   if (typeof params !== "object" || typeof params._hash !== "string") {
-    return "Invalid request."
+    return "Invalid prop types."
   }
-
   const { _hash } = params
   const hashes = await bhashDB.keys().all()
   if (!hashes.includes(_hash)) {
@@ -48,9 +47,9 @@ async function getBlockByHash(params, bhashDB, blockDB) {
   return { block }
 }
 
-async function getBlockByNumber(params, blockDB) {
+const getBlockByNumber = async (params, blockDB) => {
   if (typeof params !== "object" || typeof params.blockNumber !== "number") {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   const { blockNumber } = params
   const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
@@ -63,9 +62,9 @@ async function getBlockByNumber(params, blockDB) {
   }
 }
 
-async function getBlockTxnCountByHash(params, bhashDB, blockDB) {
+const getBlockTxnCountByHash = async (params, bhashDB, blockDB) => {
   if (typeof params !== "object" || typeof params._hash !== "string") {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   const { _hash } = params
   const hashes = await bhashDB.keys().all()
@@ -77,10 +76,10 @@ async function getBlockTxnCountByHash(params, bhashDB, blockDB) {
   return { count: block.transactions.length }
 }
 
-async function getBlockTxnCountByNumber(params, blockDB) {
+const getBlockTxnCountByNumber = async (params, blockDB) => {
   const { blockNumber } = params
   if (typeof params !== "object" || typeof blockNumber !== "number") {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map((key) => parseInt(key)))
@@ -94,7 +93,7 @@ async function getBlockTxnCountByNumber(params, blockDB) {
   }
 }
 
-async function getBalance(params, stateDB) {
+const getBalance = async (params, stateDB) => {
   const { address } = params
   if
     (
@@ -102,7 +101,7 @@ async function getBalance(params, stateDB) {
     typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
 
   const targetState = await stateDB.get(address)
@@ -110,7 +109,7 @@ async function getBalance(params, stateDB) {
   return { balance: targetBalance }
 }
 
-async function getCode(params, codeDB) {
+const getCode = async (params, codeDB) => {
   const { codeHash } = params
   if
     (
@@ -118,14 +117,14 @@ async function getCode(params, codeDB) {
     typeof codeHash !== "string" ||
     !(await codeDB.keys().all()).includes(codeHash)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     return { code: await codeDB.get(codeHash) }
   }
 }
 
-async function getCodeHash(params, stateDB) {
+const getCodeHash = async (params, stateDB) => {
   const { address } = params
   if
     (
@@ -133,7 +132,7 @@ async function getCodeHash(params, stateDB) {
     typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     const dataFromTarget = await stateDB.get(address) // Fetch target's state object
@@ -141,7 +140,7 @@ async function getCodeHash(params, stateDB) {
   }
 }
 
-async function getStorage(params, stateDB) {
+const getStorage = async (params, stateDB) => {
   const { address, key } = params
   if
     (
@@ -150,7 +149,7 @@ async function getStorage(params, stateDB) {
     typeof key !== "string" ||
     !(await stateDB.keys().all()).includes(address)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
 
   else {
@@ -160,14 +159,14 @@ async function getStorage(params, stateDB) {
   }
 }
 
-async function getStorageKeys(params, stateDB) {
+const getStorageKeys = async (params, stateDB) => {
   const { address } = params
   if
     (
     typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
@@ -175,21 +174,21 @@ async function getStorageKeys(params, stateDB) {
   }
 }
 
-async function getStorageRoot(params, stateDB) {
+const getStorageRoot = async (params, stateDB) => {
   const { address } = params
   if
     (
     typeof address !== "string" ||
     !(await stateDB.keys().all()).includes(address)
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     return { storageRoot: (await stateDB.get(contractInfo.address)).storageRoot }
   }
 }
 
-async function getTxnByBlockNumberAndIndex(params, blockDB) {
+const getTxnByBlockNumberAndIndex = async (params, blockDB) => {
   const { index, blockNumber } = params
   if
     (
@@ -197,7 +196,7 @@ async function getTxnByBlockNumberAndIndex(params, blockDB) {
     typeof blockNumber !== "number" ||
     typeof index !== "number"
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
@@ -217,7 +216,7 @@ async function getTxnByBlockNumberAndIndex(params, blockDB) {
 
 }
 
-async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB) {
+const getTxnByBlockHashAndIndex = async (params, bhashDB, blockDB) => {
   const { _hash, index } = params
   if
     (
@@ -225,7 +224,7 @@ async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB) {
     typeof _hash !== "string" ||
     typeof index !== "number"
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     const hashes = (await bhashDB.keys().all())
@@ -245,14 +244,14 @@ async function getTxnByBlockHashAndIndex(params, bhashDB, blockDB) {
   }
 }
 
-async function sendTxn(params, txHandler) {
+const sendTxn = async (params, txHandler) => {
   const { tx } = params
   if
     (
     typeof params !== "object" ||
     typeof tx !== "object"
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
     try {
@@ -267,7 +266,7 @@ async function sendTxn(params, txHandler) {
 }
 
 
-async function signTxn(params, keyPair) {
+const signTxn = (params, keyPair) => {
   const { recipient, amount } = params
   if
     (
@@ -276,18 +275,18 @@ async function signTxn(params, keyPair) {
     typeof amount !== "number"
 
   ) {
-    return "Invalid request."
+    return "Invalid prop types."
   }
   else {
-    const tx = new Transaction({recipient, amount, nonce: 1})
+    const tx = new Transaction({ recipient, amount, nonce: 1 })
     Transaction.sign(tx, keyPair)
     return { tx }
   }
 }
 
 
-function rpc(PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) {
-  const handleJsonRpcRequest = async (request, reply) => {
+const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) => {
+  const handleRPC = async (request, reply) => {
     const { method, params, id } = request.body
     const generateResponse = (result, id) => {
       return { jsonrpc: '2.0', data: result, id: id }
@@ -354,23 +353,27 @@ function rpc(PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
     return generateResponse(result, id)
   }
 
-  fastify.post('/jsonrpc', async (request, reply) => {
-    try {
-      const response = await handleJsonRpcRequest(request, reply)
-      return { response }
-    }
-    catch (error) {
-      return { error: { code: -32000, message: 'JSON-RPC error: ' + error.message } }
-    }
-  })
+
 
   // Start the server
-  fastify.listen({ port: PORT }, (err) => {
-    if (err) {
-      console.error(err)
-      process.exit(1)
-    }
-  })
+  const main = (fastify) => {
+    fastify.post('/jsonrpc', async (request, reply) => {
+      try {
+        const response = await handleRPC(request, reply)
+        return { response }
+      }
+      catch (error) {
+        return { error: { code: -32000, message: 'JSON-RPC error: ' + error.message } }
+      }
+    })
+    fastify.listen({ port: PORT }, (err) => {
+      if (err) {
+        console.error(err)
+        process.exit(1)
+      }
+    })
+  }
+  return main
 }
 
 module.exports = rpc
