@@ -22,14 +22,7 @@ const fastify = require('fastify')({
 
 class Transaction {
   constructor({ recipient = "", amount = "0", gas = '2000000000', additionalData = {}, nonce = 0 } = {}) {
-  Object.assign(this, {
-    recipient,
-    amount,
-    gas,
-    additionalData,
-    nonce,
-    signature: {},
-  });
+  Object.assign(this, { recipient, amount, gas, additionalData, nonce, signature: {}, });
 }
 
 
@@ -64,6 +57,7 @@ class Transaction {
   static async isValid(tx, stateDB) {
     const { recipient, amount, gas, additionalData, nonce } = tx
     const { contractGas } = additionalData
+    const response = {valid: false, msg: ''}
     //validate tx prop types
     if (
       !(
@@ -75,8 +69,8 @@ class Transaction {
         
       )
     ) {
-      fastify.log.error('HINT: Invalid prop types.')
-      return false
+      response.msg = 'msg: Invalid prop types.'
+      return response
     }
     const senderPubKey = Transaction.getPubKey(tx)
     const senderAddress = SHA256(senderPubKey)
@@ -84,32 +78,31 @@ class Transaction {
     if (!(await stateDB.keys().all()).includes(senderAddress)) {
       fastify.log.info(senderAddress)
       //fastify.log.info(await stateDB.keys().all())
-      fastify.log.error('HINT: Sender not in state.')
-      return false
+      response.msg = 'msg: Sender not in state.'
+      return response
     }
     // stateDB tracks codeHash & balance
     const { balance, codeHash } = await stateDB.get(senderAddress)
     //EMPTY_HASH is set for every state object, !EMPTY_HASH executes a smart contract; 
     if (codeHash !== EMPTY_HASH) {
-      fastify.log.error('HINT: Address is for a smart contract.')
-      return false
+      response.msg = 'msg: Address is for a smart contract.'
+      return response
     }
     if(BigInt(balance) < BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0)){
-      fastify.log.error('HINT: Balance is insufficient for this tx.')
-      return false
-
+      response.msg = 'msg: Insufficient balance.'
+      return response
     }
     if(BigInt(gas) < 2000000000n){
-      fastify.log.error('HINT: Insufficient gas fee.')
-      return false
-
+      response.msg = 'msg: Insufficient gas fee.'
+      return response
     }
     if(BigInt(amount) < 0){
-      fastify.log.error('HINT: Invalid tx amount.')
-      return false
-
+      response.msg = 'msg: Min tx amount is 0.'
+      return response
     }
-    return true
+    response.valid = true
+    response.msg = 'Transaction validated successfully.'
+    return response
   }
 }
 
