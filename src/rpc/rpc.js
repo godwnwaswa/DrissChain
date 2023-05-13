@@ -279,7 +279,7 @@ async function signTxn(params, keyPair) {
     return "Invalid request."
   }
   else {
-    const tx = new Transaction(recipient, amount)
+    const tx = new Transaction({recipient, amount, nonce: 1})
     Transaction.sign(tx, keyPair)
     return { tx }
   }
