@@ -89,15 +89,27 @@ class Transaction {
     }
     // stateDB tracks codeHash & balance
     const { balance, codeHash } = await stateDB.get(senderAddress)
-    //EMPTY_HASH & set bosysignals contract deployment
+    //EMPTY_HASH is set for every state object, !EMPTY_HASH executes a smart contract; 
     if (codeHash !== EMPTY_HASH) {
       fastify.log.error('HINT: Address is for a smart contract.')
       return false
     }
-    return (
-      BigInt(balance) >= BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0) &&
-      BigInt(gas) >= 2000000000n && BigInt(amount) >= 0
-    )
+    if(BigInt(balance) < BigInt(amount) + BigInt(gas) + BigInt(contractGas || 0)){
+      fastify.log.error('HINT: Balance is insufficient for this tx.')
+      return false
+
+    }
+    if(BigInt(gas) < 2000000000n){
+      fastify.log.error('HINT: Insufficient gas fee.')
+      return false
+
+    }
+    if(BigInt(amount) < 0){
+      fastify.log.error('HINT: Invalid tx amount.')
+      return false
+
+    }
+    return true
   }
 }
 
