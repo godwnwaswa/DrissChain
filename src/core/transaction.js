@@ -2,8 +2,7 @@
 
 const BN = require("bn.js")
 const { isNumber } = require("../utils/utils")
-const crypto = require("crypto")
-const { createHash } = crypto
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const ec = new (require("elliptic").ec)("secp256k1")
 const { EMPTY_HASH } = require("../config.json")
 
@@ -22,31 +21,20 @@ const fastify = require('fastify')({
 
 
 class Transaction {
-  constructor( recipient = "", amount = "0", gas = '2000000000', //base gas fee
-    additionalData = {}, nonce = 0
-  ) {
-    Object.assign(this, {
-      recipient,
-      amount,
-      gas, 
-      additionalData,
-      nonce,
-      signature: {},
-    })
-  }
+  constructor({ recipient = "", amount = "0", gas = '2000000000', additionalData = {}, nonce = 0 } = {}) {
+  Object.assign(this, {
+    recipient,
+    amount,
+    gas,
+    additionalData,
+    nonce,
+    signature: {},
+  });
+}
+
 
   static getHash(tx) {
-    return createHash("sha256")
-      .update(
-        [
-          tx.recipient,
-          tx.amount,
-          tx.gas,
-          JSON.stringify(tx.additionalData),
-          tx.nonce.toString(),
-        ].join("")
-      )
-      .digest("hex")
+    return SHA256(`${tx.recipient}${tx.amount}${tx.gas}${JSON.stringify(tx.additionalData)}${tx.nonce.toString()}`)
   }
 
   static sign(transaction, keyPair) {
@@ -91,9 +79,11 @@ class Transaction {
       return false
     }
     const senderPubKey = Transaction.getPubKey(tx)
-    const senderAddress = createHash("sha256").update(senderPubKey).digest("hex")
+    const senderAddress = SHA256(senderPubKey)
     // sender is not part of the chain state
     if (!(await stateDB.keys().all()).includes(senderAddress)) {
+      fastify.log.info(senderAddress)
+      //fastify.log.info(await stateDB.keys().all())
       fastify.log.error('HINT: Sender not in state.')
       return false
     }
