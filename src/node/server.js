@@ -86,7 +86,7 @@ const {createTx} = require("./types/create-tx")
 const server = async config => {
     const { 
         PORT = 3000, RPC_PORT = 5000, 
-        PEERS = [], MAX_PEERS = 10, 
+        PEERS = [], MAX_PEERS = 3, 
         MY_ADDRESS = "ws://localhost:3000", 
         ENABLE_MINING = false, ENABLE_LOGGING = false, 
         ENABLE_RPC = false, PRIVATE_KEY = null, 
@@ -112,20 +112,23 @@ const server = async config => {
                     break
 
                 case TYPE.CREATE_TRANSACTION:
-                    if (ENABLE_CHAIN_REQUEST) break
-                    createTx(_message, stateDB, chainInfo)
+                    if (!ENABLE_CHAIN_REQUEST){
+                        createTx(_message, stateDB, chainInfo)
+                    }
                     break
 
                 case TYPE.REQUEST_BLOCK:
-                    requestBlock(_message)
+                    if (!ENABLE_CHAIN_REQUEST) {
+                        requestBlock(_message, opened, blockDB)
+                    }
                     break
 
                 case TYPE.SEND_BLOCK:
-                    sendBlock(_message)
+                    sendBlock(_message, currentSyncBlock, chainInfo, stateDB, codeDB, blockDB, bhashDB, opened, MY_ADDRESS, ENABLE_LOGGING)
                     break
 
                 case TYPE.HANDSHAKE:
-                    handshake(_message)
+                    handshake(_message, MAX_PEERS, MY_ADDRESS, address, connected, opened, connectedNodes)
             }
         })
     })
