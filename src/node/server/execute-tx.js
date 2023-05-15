@@ -10,6 +10,8 @@ const logger = pino({
 const fastify = require('fastify')({
     logger: logger
 })
+
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const Transaction = require("../../core/transaction")
 const drisscript = require("../../core/runtime")
 const { EMPTY_HASH } = require("../../config.json")

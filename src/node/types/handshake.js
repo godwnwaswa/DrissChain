@@ -11,11 +11,10 @@ const fastify = require('fastify')({
     logger: logger
 })
 
-const {connect} = require('../server/connect')
+const connect = require('../server/connect')
 
-export const handshake = (
-    msg, MAX_PEERS, MY_ADDRESS, 
-    address, connected, opened, 
+const handshake = (
+    msg, MAX_PEERS, MY_ADDRESS, connected, opened, 
     connectedNodes) => {
     const address = msg.data
     if (connectedNodes <= MAX_PEERS) {
@@ -23,3 +22,5 @@ export const handshake = (
     }
 
 }
+
+module.exports = handshake

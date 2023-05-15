@@ -16,7 +16,7 @@ const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { sendMsg } = require("../message")
 
-export const newBlock = async (
+const newBlock = async (
     msg, chainInfo, currentSyncBlock, 
     stateDB, codeDB, blockDB, bhashDB, 
     ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, 
@@ -57,3 +57,5 @@ export const newBlock = async (
     }
     
 }
+
+module.exports = newBlock

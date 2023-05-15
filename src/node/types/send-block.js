@@ -15,7 +15,7 @@ const { produceMsg } = require("../message")
 const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const changeState = require("../../core/state")
 
-export const sendBlock = async (
+const sendBlock = async (
     msg, currentSyncBlock, chainInfo, 
     stateDB, codeDB, blockDB, bhashDB, 
     opened, MY_ADDRESS, ENABLE_LOGGING) => {
@@ -43,3 +43,5 @@ export const sendBlock = async (
     }
     
 }
+
+module.exports = sendBlock

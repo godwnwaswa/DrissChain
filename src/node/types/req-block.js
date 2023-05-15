@@ -14,7 +14,7 @@ const fastify = require('fastify')({
 const TYPE = require("../message-types")
 const { produceMsg } = require("../message")
 
-export const requestBlock = async (msg, opened, blockDB) => {
+const requestBlock = async (msg, opened, blockDB) => {
     const { blockNumber, requestAddress } = msg.data
     const socket = opened.find(node => node.address === requestAddress).socket
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
@@ -26,3 +26,5 @@ export const requestBlock = async (msg, opened, blockDB) => {
 
 
 }
+
+module.exports = requestBlock

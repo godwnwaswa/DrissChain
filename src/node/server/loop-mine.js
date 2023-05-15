@@ -12,10 +12,9 @@ const fastify = require('fastify')({
 })
 
 const { BLOCK_TIME } = require("../../config.json")
-const {mine} = require('./mine')
+const mine = require('./mine')
 
-const loopMine = (
-    publicKey, BLOCK_GAS_LIMIT, stateDB, 
+const loopMine = (publicKey, BLOCK_GAS_LIMIT, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
     worker, mined, ENABLE_CHAIN_REQUEST) => {
 

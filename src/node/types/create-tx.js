@@ -11,11 +11,12 @@ const fastify = require('fastify')({
     logger: logger
 })
 
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const Transaction = require("../../core/transaction")
 const { sendMsg } = require("../message")
 
-export const createTx = async (msg, stateDB, chainInfo) => {
-    const tx = msg.data
+const createTx = async (_msg, stateDB, chainInfo) => {
+    const tx = _msg.data
     const {valid, msg} = await Transaction.isValid(tx, stateDB)
     
     if (!valid) {
@@ -41,3 +42,5 @@ export const createTx = async (msg, stateDB, chainInfo) => {
     sendMsg(message, opened)
     
 }
+
+module.exports = createTx

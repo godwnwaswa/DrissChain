@@ -1,6 +1,5 @@
 "use strict"
 
-const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const WS = require("ws")
 const EC = require("elliptic").ec, ec = new EC("secp256k1")
 const { Level } = require('level')
@@ -58,17 +57,17 @@ const fastify = require('fastify')({
  * Isolated dependencies
 */
 
-const {connect} = require("./server/connect")
-const {sendTx} = require("./server/send-tx")
-const {chainRequest} = require("./server/chain-request")
-const {loopMine} = require("./server/loop-mine")
+const connect = require("./server/connect")
+const sendTx = require("./server/send-tx")
+const chainRequest = require("./server/chain-request")
+const loopMine = require("./server/loop-mine")
 
 //message type cases
-const {newBlock} = require("./types/new-block")
-const {requestBlock} = require("./types/req-block")
-const {handshake} = require("./types/handshake")
-const {sendBlock} = require("./types/send-block")
-const {createTx} = require("./types/create-tx")
+const newBlock = require("./types/new-block")
+const requestBlock = require("./types/req-block")
+const handshake = require("./types/handshake")
+const sendBlock = require("./types/send-block")
+const createTx = require("./types/create-tx")
 
 
 /**
@@ -153,10 +152,12 @@ const server = async config => {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(
-        publicKey, BLOCK_GAS_LIMIT, stateDB, 
-        blockDB, bhashDB, codeDB, chainInfo, 
-        worker, mined, ENABLE_CHAIN_REQUEST)
+    if (ENABLE_MINING) {
+        loopMine(
+            publicKey, BLOCK_GAS_LIMIT, stateDB, 
+            blockDB, bhashDB, codeDB, chainInfo, 
+            worker, mined, ENABLE_CHAIN_REQUEST)
+    }
 
     if (ENABLE_RPC){
         const _sendTx = (tx) => {

@@ -1,4 +1,4 @@
-const { startServer } = require("./src/node/server");
+const { server } = require("./src/node/server");
 const config = require("./config.json");
 
 (async () => {

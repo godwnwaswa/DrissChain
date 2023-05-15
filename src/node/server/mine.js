@@ -11,11 +11,16 @@ const fastify = require('fastify')({
     logger: logger
 })
 
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const { fork } = require("child_process")
 const Block = require("../../core/block")
 const { buildMerkleTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
-const {executeTx} = require('./execute-tx')
+const { updateDifficulty } = require("../../consensus/consensus")
+const executeTx = require('./execute-tx')
+const { BLOCK_REWARD } = require("../../config.json")
+const { clearDepreciatedTxns } = require("../../core/txPool")
+const { produceMsg, sendMsg } = require("../message")
 
 const mine = async (
     publicKey, BLOCK_GAS_LIMIT, stateDB, 
