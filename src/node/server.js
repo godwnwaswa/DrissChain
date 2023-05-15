@@ -154,9 +154,9 @@ const server = async config => {
 
     if (ENABLE_MINING) {
         loopMine(
-            publicKey, BLOCK_GAS_LIMIT, stateDB, 
+            publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
             blockDB, bhashDB, codeDB, chainInfo, 
-            worker, mined, ENABLE_CHAIN_REQUEST)
+            worker, mined, opened, ENABLE_CHAIN_REQUEST)
     }
 
     if (ENABLE_RPC){

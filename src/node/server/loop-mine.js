@@ -14,9 +14,9 @@ const fastify = require('fastify')({
 const { BLOCK_TIME } = require("../../config.json")
 const mine = require('./mine')
 
-const loopMine = (publicKey, BLOCK_GAS_LIMIT, stateDB, 
+const loopMine = (publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined, ENABLE_CHAIN_REQUEST) => {
+    worker, mined, opened, ENABLE_CHAIN_REQUEST) => {
 
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
@@ -25,9 +25,9 @@ const loopMine = (publicKey, BLOCK_GAS_LIMIT, stateDB,
             mining = false
             length = chainInfo.latestBlock.blockNumber
             if (!ENABLE_CHAIN_REQUEST) await mine(
-                publicKey, BLOCK_GAS_LIMIT, stateDB, 
+                publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
                 blockDB, bhashDB, codeDB, chainInfo, 
-                worker, mined)
+                worker, mined, opened)
         }
     }, BLOCK_TIME)
 }

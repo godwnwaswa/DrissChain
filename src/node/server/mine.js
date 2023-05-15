@@ -24,9 +24,9 @@ const { produceMsg, sendMsg } = require("../message")
 const TYPE = require("../message-types")
 
 const mine = async (
-    publicKey, BLOCK_GAS_LIMIT, stateDB, 
+    publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined) => {
+    worker, mined, opened) => {
 
     const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {
