@@ -9,9 +9,16 @@ const { fork } = require("child_process")
 const Block = require("../core/block")
 const Transaction = require("../core/transaction")
 const changeState = require("../core/state")
-const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT, BLOCK_TIME } = require("../config.json")
+const { 
+    BLOCK_REWARD, 
+    BLOCK_GAS_LIMIT, 
+    EMPTY_HASH, 
+    INITIAL_SUPPLY, 
+    FIRST_ACCOUNT, 
+    BLOCK_TIME } = require("../config.json")
+
 const { produceMsg, sendMsg } = require("./message")
-const generateGenesisBlock = require("../core/genesis")
+const genesisBlock = require("../core/genesis")
 const { addTx, clearDepreciatedTxns } = require("../core/txPool")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
@@ -31,7 +38,7 @@ let mined = false // This will be used to inform the node that another node has 
 // Some chain info cache
 const chainInfo = {
     txPool: [],
-    latestBlock: generateGenesisBlock(),
+    latestBlock: genesisBlock(),
     latestSyncBlock: null,
     checkedBlock: {},
     tempStates: {},
@@ -56,9 +63,9 @@ const fastify = require('fastify')({
     logger: logger
 })
 /**
- * Starts a Drissium node at a specified WS address.
+ * Starts a Drisseum node at a specified WS address.
  * */
-const startServer = async options => {
+const server = async options => {
     const { 
         PORT = 3000, RPC_PORT = 5000, 
         PEERS = [], MAX_PEERS = 10, 
@@ -67,7 +74,8 @@ const startServer = async options => {
         ENABLE_RPC = false, PRIVATE_KEY = null, 
         ENABLE_CHAIN_REQUEST = false 
     } = options
-    const privateKey = PRIVATE_KEY || ec.genKeyPair().getPrivate("hex")
+
+    const privateKey = PRIVATE_KEY 
     const keyPair = ec.keyFromPrivate(privateKey, "hex")
     const publicKey = keyPair.getPublic("hex")
     process.on("uncaughtException", err => fastify.log.error(err))
@@ -118,27 +126,7 @@ const startServer = async options => {
     PEERS.forEach(peer => connect(MY_ADDRESS, peer))
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
-        const blockNumbers = await blockDB.keys().all()
-        if (blockNumbers.length !== 0) {
-            currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
-        }
-        if (currentSyncBlock === 1) {
-            await stateDB.put(FIRST_ACCOUNT, { 
-                balance: INITIAL_SUPPLY, 
-                codeHash: EMPTY_HASH, 
-                nonce: 0, 
-                storageRoot: EMPTY_HASH 
-            })
-        }
-        setTimeout(async () => {
-            for (const node of opened) {
-                node.socket.send(produceMsg(TYPE.REQUEST_BLOCK, { 
-                    blockNumber: currentSyncBlock, 
-                    requestAddress: MY_ADDRESS 
-                }))
-                await new Promise(r => setTimeout(r, 5000))
-            }
-        }, 5000)
+        requestChain()
     }
 
     if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME)
@@ -149,31 +137,4 @@ const startServer = async options => {
     
 }
 
-/**
- * Broadcasts a transaction to other nodes.
-*/
-const sendTx = async tx => {
-    fastify.log.info("Tx received on Drisseum.")
-    sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
-    const res = await addTx(tx, chainInfo, stateDB)
-    if(!res.error){
-        fastify.log.info(res.msg)
-    } else {fastify.log.error(res.msg)}
-}
-
-
-
-const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME) => {
-    let length = chainInfo.latestBlock.blockNumber
-    let mining = true
-
-    setInterval(async () => {
-        if (mining || length !== chainInfo.latestBlock.blockNumber) {
-            mining = false
-            length = chainInfo.latestBlock.blockNumber
-            if (!ENABLE_CHAIN_REQUEST) await mine(publicKey, ENABLE_LOGGING)
-        }
-    }, BLOCK_TIME)
-}
-
-module.exports = { startServer }
+module.exports = { server }
