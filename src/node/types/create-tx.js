@@ -1,28 +1,43 @@
-export const createTx = async (_message) => {
-    if (ENABLE_CHAIN_REQUEST) break
-    const transaction = _message.data
-    const {valid, msg} = await Transaction.isValid(transaction, stateDB)
+const pino = require('pino')
+const logger = pino({
+    transport: {
+        target: 'pino-pretty',
+        options: {
+            ignore: 'pid,hostname',
+        },
+    },
+})
+const fastify = require('fastify')({
+    logger: logger
+})
+
+const Transaction = require("../../core/transaction")
+const { sendMsg } = require("../message")
+
+export const createTx = async (msg, stateDB, chainInfo) => {
+    const tx = msg.data
+    const {valid, msg} = await Transaction.isValid(tx, stateDB)
     
     if (!valid) {
         fastify.log.error(msg)
-        break
+        return
     } else{ fastify.log.info(msg)}
 
-    const txSenderPubkey = Transaction.getPubKey(transaction)
+    const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
-    if (!(await stateDB.keys().all()).includes(txSenderAddress)) break
+    if (!(await stateDB.keys().all()).includes(txSenderAddress)) return
 
     let maxNonce = 0
-    for (const tx of chainInfo.txPool) {
-        const poolTxSenderPubkey = Transaction.getPubKey(transaction)
+    for (const _tx of chainInfo.txPool) {
+        const poolTxSenderPubkey = Transaction.getPubKey(_tx)
         const poolTxSenderAddress = SHA256(poolTxSenderPubkey)
-        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) {
+        if (poolTxSenderAddress === txSenderAddress && _tx.nonce > maxNonce) {
             maxNonce = tx.nonce
         }
     }
-    if (maxNonce + 1 !== transaction.nonce) return
-    fastify.log.info("New transaction received, broadcasted and added to pool.")
-    chainInfo.txPool.push(transaction)
+    if (maxNonce + 1 !== tx.nonce) return
+    fastify.log.info("New tx received, broadcasted and added to pool.")
+    chainInfo.txPool.push(tx)
     sendMsg(message, opened)
     
 }

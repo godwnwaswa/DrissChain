@@ -112,7 +112,8 @@ const server = async config => {
                     break
 
                 case TYPE.CREATE_TRANSACTION:
-                    createTx(_message)
+                    if (ENABLE_CHAIN_REQUEST) break
+                    createTx(_message, stateDB, chainInfo)
                     break
 
                 case TYPE.REQUEST_BLOCK:
