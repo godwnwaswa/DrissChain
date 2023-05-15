@@ -1,6 +1,6 @@
-export const requestBlock = async () => {
+export const requestBlock = async (msg) => {
     if (!ENABLE_CHAIN_REQUEST) {
-        const { blockNumber, requestAddress } = _message.data
+        const { blockNumber, requestAddress } = msg.data
         const socket = opened.find(node => node.address === requestAddress).socket
         const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
         if (blockNumber > 0 && blockNumber <= currentBlockNumber) {

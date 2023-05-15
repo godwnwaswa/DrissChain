@@ -1,5 +1,5 @@
-export const sendBlock = async (_message) => {
-    const block = _message.data
+export const sendBlock = async (msg) => {
+    const block = msg.data
     if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
         fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")
         if (chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
