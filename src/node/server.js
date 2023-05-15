@@ -68,6 +68,8 @@ const fastify = require('fastify')({
 */
 
 const connect = require("./server/connect")
+const sendTx = require("./server/send-tx")
+const chainRequest = require("./server/chain-request")
 
 
 
@@ -135,7 +137,7 @@ const server = async options => {
     PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes, fastify))
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
-        requestChain()
+        chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
     if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME)

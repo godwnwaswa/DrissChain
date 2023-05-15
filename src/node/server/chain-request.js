@@ -1,4 +1,12 @@
-const chainRequest = async () => {
+const { 
+    EMPTY_HASH, 
+    INITIAL_SUPPLY, 
+    FIRST_ACCOUNT } = require("../../config.json")
+
+const { produceMsg } = require("../message")
+const TYPE = require("../message-types")
+
+export const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS) => {
     const blockNumbers = await blockDB.keys().all()
     if (blockNumbers.length !== 0) {
         currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
