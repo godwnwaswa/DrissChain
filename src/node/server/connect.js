@@ -1,5 +1,5 @@
 const { produceMsg } = require("../message")
-const TYPE = require("./message-types")
+const TYPE = require("../message-types")
 /**
  * Connects to a WS server at the specified address.
  * */
