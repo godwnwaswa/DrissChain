@@ -76,9 +76,7 @@ class Transaction {
     const senderAddress = SHA256(senderPubKey)
     // sender is not part of the chain state
     if (!(await stateDB.keys().all()).includes(senderAddress)) {
-      fastify.log.info(senderAddress)
-      //fastify.log.info(await stateDB.keys().all())
-      response.msg = 'msg: Sender not in state.'
+      response.msg = 'msg: Sender not in state. hint: If you signed this tx, its contents have changed invalidating your sig.'
       return response
     }
     // stateDB tracks codeHash & balance
@@ -101,7 +99,7 @@ class Transaction {
       return response
     }
     response.valid = true
-    response.msg = 'Transaction validated successfully.'
+    response.msg = 'msg: Valid Tx.'
     return response
   }
 }
