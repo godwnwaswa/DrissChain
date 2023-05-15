@@ -1,4 +1,4 @@
-const requestBlock = async () => {
+export const requestBlock = async () => {
     if (!ENABLE_CHAIN_REQUEST) {
         const { blockNumber, requestAddress } = _message.data
         const socket = opened.find(node => node.address === requestAddress).socket

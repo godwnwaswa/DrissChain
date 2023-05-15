@@ -1,4 +1,4 @@
-const createTx = async (_message) => {
+export const createTx = async (_message) => {
     if (ENABLE_CHAIN_REQUEST) break
     const transaction = _message.data
     const {valid, msg} = await Transaction.isValid(transaction, stateDB)

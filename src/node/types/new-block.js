@@ -1,4 +1,4 @@
-const newBlock = async (_message) => {
+export const newBlock = async (_message) => {
     const newBlock = _message.data
     if (!chainInfo.checkedBlock[newBlock.hash]) {
         chainInfo.checkedBlock[newBlock.hash] = true
