@@ -82,109 +82,23 @@ const startServer = async options => {
             const _message = parseJSON(message)
             switch (_message.type) {
                 case TYPE.NEW_BLOCK:
-                    const newBlock = _message.data
-                    if (!chainInfo.checkedBlock[newBlock.hash]) {
-                        chainInfo.checkedBlock[newBlock.hash] = true
-                    }
-                    else {
-                        return
-                    }
-
-                    if (!ENABLE_MINING){
-                        fastify.log.info("NEW_BLOCK* from peer. Verifying...")
-                    }
-                    
-                    if (newBlock.parentHash !== chainInfo.latestBlock.parentHash && (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))) {
-                        chainInfo.checkedBlock[newBlock.hash] = true
-                        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
-                            fastify.log.info("Block verified. Syncing to the chain...")
-                            if (ENABLE_MINING) {
-                                mined = true //check their chain length & sync if > your chain else mine
-                                worker.kill()
-                                worker = fork(`${__dirname}/../miner/worker.js`)
-                            }
-                            await updateDifficulty(newBlock, chainInfo, blockDB)
-                            await blockDB.put(newBlock.blockNumber.toString(), newBlock)
-                            await bhashDB.put(newBlock.hash, newBlock.blockNumber.toString())
-                            chainInfo.latestBlock = newBlock
-                            chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
-                            fastify.log.info(`Synced at height #${newBlock.blockNumber}, chain state transited.`)
-                            sendMsg(message, opened)
-                            // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
-                            // {
-                            //     ENABLE_CHAIN_REQUEST = false
-                            // }
-                        }
-                    }
+                    newBlock(_message)
                     break
 
                 case TYPE.CREATE_TRANSACTION:
-                    if (ENABLE_CHAIN_REQUEST) break
-                    const transaction = _message.data
-                    const {valid, msg} = await Transaction.isValid(transaction, stateDB)
-                    fastify.log.info(msg)
-                    if (!valid) break
-                    const txSenderPubkey = Transaction.getPubKey(transaction)
-                    const txSenderAddress = SHA256(txSenderPubkey)
-                    if (!(await stateDB.keys().all()).includes(txSenderAddress)) break
-
-                    let maxNonce = 0
-                    for (const tx of chainInfo.txPool) {
-                        const poolTxSenderPubkey = Transaction.getPubKey(transaction)
-                        const poolTxSenderAddress = SHA256(poolTxSenderPubkey)
-                        if (poolTxSenderAddress === txSenderAddress && tx.nonce > maxNonce) {
-                            maxNonce = tx.nonce
-                        }
-                    }
-                    if (maxNonce + 1 !== transaction.nonce) return
-                    fastify.log.info("New transaction received, broadcasted and added to pool.")
-                    chainInfo.txPool.push(transaction)
-                    sendMsg(message, opened)
+                    createTx(_message)
                     break
 
                 case TYPE.REQUEST_BLOCK:
-                    if (!ENABLE_CHAIN_REQUEST) {
-                        const { blockNumber, requestAddress } = _message.data
-                        const socket = opened.find(node => node.address === requestAddress).socket
-                        const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))
-                        if (blockNumber > 0 && blockNumber <= currentBlockNumber) {
-                            const block = await blockDB.get(blockNumber.toString())
-                            socket.send(produceMsg(TYPE.SEND_BLOCK, block))
-                            fastify.log.info(`SEND_BLOCK* at height #${blockNumber} to ${requestAddress}.`)
-                        }
-                    }
+                    requestBlock(_message)
                     break
 
                 case TYPE.SEND_BLOCK:
-                    const block = _message.data
-                    if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
-                        fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")
-                        if (chainInfo.latestSyncBlock === null || await verifyBlock(block, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
-                            fastify.log.info("Block verified. Syncing to the chain...")
-                            currentSyncBlock += 1
-                            await blockDB.put(block.blockNumber.toString(), block)
-                            await bhashDB.put(block.hash, block.blockNumber.toString())
-                            if (!chainInfo.latestSyncBlock) {
-                                chainInfo.latestSyncBlock = block
-                                await changeState(block, stateDB, codeDB, ENABLE_LOGGING)
-                            }
-                            chainInfo.latestBlock = block
-                            await updateDifficulty(block, chainInfo, blockDB)
-                            fastify.log.info(`Synced at height #${block.blockNumber}, chain state transited.`)
-
-                            for (const node of opened) {
-                                node.socket.send(produceMsg(TYPE.REQUEST_BLOCK,{ blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }))
-                                await new Promise(r => setTimeout(r, 5000))
-                            }
-                        }
-                    }
+                    sendBlock(_message)
                     break
 
                 case TYPE.HANDSHAKE:
-                    const address = _message.data
-                    if (connectedNodes <= MAX_PEERS) {
-                        connect(MY_ADDRESS, address)
-                    }
+                    handshake(_message)
             }
         })
     })
@@ -230,7 +144,7 @@ const startServer = async options => {
     if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME)
     if (ENABLE_RPC){
         const main = rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
-        main(fastify)
+        main()
     }
     
 }
@@ -270,8 +184,12 @@ const connect = (MY_ADDRESS, address) => {
  * Broadcasts a transaction to other nodes.
 */
 const sendTx = async tx => {
+    fastify.log.info("Tx received on Drisseum.")
     sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
-    await addTx(tx, chainInfo, stateDB)
+    const res = await addTx(tx, chainInfo, stateDB)
+    if(!res.error){
+        fastify.log.info(res.msg)
+    } else {fastify.log.error(res.msg)}
 }
 
 const mine = async (publicKey, ENABLE_LOGGING) => {
