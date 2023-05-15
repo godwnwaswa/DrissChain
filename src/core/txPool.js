@@ -17,24 +17,23 @@ const fastify = require('fastify')({
   logger : logger
 })
 const addTx = async (tx, chainInfo, stateDB) => {
-    fastify.log.info("A tx received on the blockchain.")
+    const response = {error: true, msg:''}
     // Transactions are weakly verified when added to the pool (no state checking), but will be fully checked in block production.
     const { valid, msg} = await Transaction.isValid(tx, stateDB)
     if (!(valid) || BigInt(tx.additionalData.contractGas || 0) > BigInt(BLOCK_GAS_LIMIT)) {
-        fastify.log.error(`Failed to add the tx to pool. ${msg}`)
-        return
+        response.msg = `${msg}`
+        return response
     }
 
-    const { txPool } = chainInfo
-    // Get public key and address from sender
     const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
 
     if (!(await stateDB.keys().all()).includes(txSenderAddress)) {
-        fastify.log.error("Failed to add the tx to pool. Sender address non-existent.")
-        return
+        response.msg = 'Sender address non-existent.'
+        return response
     }
 
+    const { txPool } = chainInfo
     // Check nonce
     let maxNonce = 0
     for (const tx of txPool) {
@@ -45,11 +44,14 @@ const addTx = async (tx, chainInfo, stateDB) => {
         }
     }
     if (maxNonce + 1 !== tx.nonce) {
-        fastify.log.error("Failed to add the tx to pool. Invalid nonce.")
-        return
+        response.msg = 'Invalid nonce -- txPool'
+        return response
     }
+
     txPool.push(tx)
-    fastify.log.info("Added the tx to the txPool.")
+    response.msg = `Tx added to txPool. ${msg}`
+    response.error = false
+    return response
 }
 
 const clearDepreciatedTxns = async (chainInfo, stateDB) => { 
