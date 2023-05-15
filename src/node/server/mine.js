@@ -1,7 +1,17 @@
-let worker = fork(`${__dirname}/../../miner/worker.js`) // Worker thread (for PoW mining).
-const Block = require("../../core/block")
+const pino = require('pino')
+const logger = pino({
+    transport: {
+        target: 'pino-pretty',
+        options: {
+            ignore: 'pid,hostname',
+        },
+    },
+})
+const fastify = require('fastify')({
+    logger: logger
+})
 
-export const mine = async (publicKey, ENABLE_LOGGING, stateDB, chainInfo) => {
+export const mine = async (publicKey, BLOCK_GAS_LIMIT, stateDB, chainInfo, worker) => {
 
     const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {
@@ -21,8 +31,9 @@ export const mine = async (publicKey, ENABLE_LOGGING, stateDB, chainInfo) => {
     const transactionsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
 
     let totalContractGas = 0n, totalTxGas = 0n
-    const existedAddresses = await stateDB.keys().all()
+    const storedAddresses = await stateDB.keys().all()
     for (const tx of chainInfo.txPool) {
+        if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
         executeTx(tx, totalContractGas, totalTxGas, totalTxGas)
     }
 
@@ -40,11 +51,11 @@ export const mine = async (publicKey, ENABLE_LOGGING, stateDB, chainInfo) => {
                 await bhashDB.put(result.hash, result.blockNumber.toString()) // Assign block number to the matching block hash
                 chainInfo.latestBlock = result // Update chain info
                 // Reward
-                if (!existedAddresses.includes(result.coinbase) && !states[result.coinbase]) {
+                if (!storedAddresses.includes(result.coinbase) && !states[result.coinbase]) {
                     states[result.coinbase] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
                     code[EMPTY_HASH] = ""
                 }
-                if (existedAddresses.includes(result.coinbase) && !states[result.coinbase]) {
+                if (storedAddresses.includes(result.coinbase) && !states[result.coinbase]) {
                     states[result.coinbase] = await stateDB.get(result.coinbase)
                     code[states[result.coinbase].codeHash] = await codeDB.get(states[result.coinbase].codeHash)
                 }
