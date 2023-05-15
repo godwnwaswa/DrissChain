@@ -70,6 +70,7 @@ const fastify = require('fastify')({
 const connect = require("./server/connect")
 const sendTx = require("./server/send-tx")
 const chainRequest = require("./server/chain-request")
+const loopMine = require("./server/loop-mine")
 
 
 
@@ -140,9 +141,17 @@ const server = async options => {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME)
+    if (ENABLE_MINING) loopMine(
+        publicKey, 
+        ENABLE_CHAIN_REQUEST, 
+        ENABLE_LOGGING, 
+        chainInfo)
+        
     if (ENABLE_RPC){
-        const main = rpc(RPC_PORT, { publicKey, mining: ENABLE_MINING }, sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
+        const main = rpc(
+            RPC_PORT, 
+            { publicKey, mining: ENABLE_MINING }, 
+            sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
         main()
     }
     

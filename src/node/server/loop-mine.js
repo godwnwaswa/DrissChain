@@ -1,4 +1,6 @@
-const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, BLOCK_TIME) => {
+const { BLOCK_TIME } = require("../../config.json")
+
+export const loopMine = (publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, chainInfo) => {
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
 
