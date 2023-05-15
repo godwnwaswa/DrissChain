@@ -2,74 +2,12 @@
 	<br/>
 	<img src="./assets/realdriss.svg"/>
 	<br/>
-	<div><b>The RealDriss core integration tree.</b></div>
-	<br/>
-	<a href="https://github.com/godwnwaswa/drisseum/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg"/></a>
-	<a href="https://github.com/godwnwaswa/drisseum/releases"><img src="https://img.shields.io/github/package-json/v/godwnwaswa/drisseum?label=stable"></a>
-	<a href="https://snyk.io/test/github/godwnwaswa/drisseum"><img src="https://snyk.io/test/github/godwnwaswa/drisseum/badge.svg"/></a>
-	<a href="https://github.com/godwnwaswa/drisseum/stargazers"><img src="https://img.shields.io/github/stars/godwnwaswa/drisseum?color=gold"></a>
-	<a href="https://github.com/godwnwaswa/drisseum/blob/main/.github/PULL_REQUEST_TEMPLATE.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+	<div><b>The RealDriss main integration tree.</b></div>
 </div>
 
-## What is drisseum?
+## What is Drisseum?
 
-A smart contract blockchain network embedded in RealDriss. RealDriss is a decentralized e-commerce marketplace for buyers and sellers to create, list and exchange products effortlessly.
-
-
-## Setup a node
-
-### Dependencies 
-
-* NodeJS v16 or higher.
-* Latest release of npm.
-
-### Requirements
-
-A system that is running Windows, Linux, or MacOS with a dual-core CPU and 8GB of RAM with a mediocre SSD/HDD should be enough.
-
-### Installation
-
-First, download the latest release from: https://github.com/godwnwaswa/drisseum/releases.
-
-Extract the zip file, in the `drisseum` folder, open up your terminal and install the required packages through `npm`:
-
-```
-npm install
-```
-
-### Generate your keys
-
-If you haven't had a drisseum key pair before, hop over to `./utils/`, on the command line, type:
-
-```
-node keygen.js
-```
-
-And it will generate an address, a public key and a private key for you.
-
-### Configure your node
-
-In `config.json`, change the props for your needs:
-
-```js
-{
-    "PORT": /*PORT that your node will run on, default is 3000*/,
-    "RPC_PORT": /*PORT that the RPC server will run on, default is 5000*/,
-    "PEERS": /*An array containing peers' address that the node will connect with, default is an empty array*/, 
-    "MY_ADDRESS": /*A string containing the node's address, default is "localhost:3000"*/,
-    "PRIVATE_KEY": /*A string containing a private key*/,
-    "ENABLE_MINING": /*Leave true if you want to mine, default is false*/
-    "ENABLE_LOGGING": /*Leave true if you want to log out contract logs, default is false*/,
-    "ENABLE_RPC": /*Leave true if you want to run a RPC server, default is false*/,
-    "ENABLE_CHAIN_REQUEST": /*Leave true if you want to sync chain from others, default is false*/
-}
-```
-
-To see an example, `config.json` is already populated with sample data.
-
-### Running the node
-
-After everything configured, simply type `node .` to run the node.
+A private blockchain network embedded in the RealDriss core serving as the main integration tree for handling the platform's business logic. It bootstraps a safer, faster and scalable marketplace for buyers and sellers to create, list and exchange value conveniently by use of smart contracts, effectively making RealDriss a decentralized e-commerce platform.
 
 ### Interacting with the node through JSON-RPC apis
 
@@ -85,36 +23,25 @@ Just do some port-forwarding, drop your public IP + the port you forwarded in an
 
 If you don't know how to forward port, just search it up online, each router model should have its own way to do port-forwarding.
 
-
-## Smart contracts
-
-Smart contract is still a fairly new feature in drisseum. It is only a proof of concept currently and is likely going to change in the future, but for now, you can read [this document](./CONTRACT.md) on creating smart contracts using a small language I have created called `drisscript`.
-
-Remember to only use it for experimental purposes, I can not guarantee that this feature will be changed or not in the future. The language is also really limited and far from ready.
-
-
 ## Economy 
 
 Note that this is an experimental project which is still under development, and an agreed drisseum network hasn't been formed yet, so this section is mainly just for fun.
 
-### Units
+### Denominations
 
-| Unit       | Jem                       |
-|------------|---------------------------|
-| Jem        | 1                         |
-| KJem       | 1,000                     |
-| MJem       | 1,000,000                 |
-| GJem       | 1,000,000,000             |
-| MicroJelly | 1,000,000,000,000         |
-| MilliJelly | 1,000,000,000,000,000     |
-| Jelly      | 1,000,000,000,000,000,000 |
+| Denom.    | Driss(DRS)    |
+|-----------|---------------|
+| Driss     | 1             |
+| Ols       | 1,000         |
+| Omi       | 1,000,000     |
+| Bezo      | 1,000,000,000 |
 
 ### Tokenomics
 
-* 100,000,000 Jelly is minted originally.
-* Current mining reward is 0.202297 Jelly.
-* Minimum transation fee is 1,000,000,000,000 Jem.
-* Minimum contract execution fee is 10,000,000 Jem. 
+* 10,000 DRS is minted originally.
+* Current mining reward is 10 DRS.
+* Minimum transation fee is 1 DRS.
+* Minimum contract execution fee is 0.1 DRS. 
 
 
 
