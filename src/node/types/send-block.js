@@ -15,7 +15,10 @@ const { produceMsg } = require("../message")
 const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const changeState = require("../../core/state")
 
-export const sendBlock = async (msg, currentSyncBlock, chainInfo, stateDB, codeDB, blockDB, bhashDB, opened, MY_ADDRESS, ENABLE_LOGGING) => {
+export const sendBlock = async (
+    msg, currentSyncBlock, chainInfo, 
+    stateDB, codeDB, blockDB, bhashDB, 
+    opened, MY_ADDRESS, ENABLE_LOGGING) => {
     const block = msg.data
     if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
         fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")

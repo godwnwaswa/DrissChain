@@ -8,17 +8,15 @@ const { fork } = require("child_process")
 
 const changeState = require("../core/state")
 const { 
-    BLOCK_REWARD, 
     BLOCK_GAS_LIMIT, 
     EMPTY_HASH, 
     INITIAL_SUPPLY, 
-    FIRST_ACCOUNT, 
-    BLOCK_TIME } = require("../config.json")
+    FIRST_ACCOUNT } = require("../config.json")
 
 const genesisBlock = require("../core/genesis")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
-const { parseJSON, indexTxns } = require("../utils/utils")
+const { parseJSON } = require("../utils/utils")
 
 const opened = []  // Addresses and sockets from connected nodes.
 const connected = []  // Addresses from connected nodes.
@@ -89,6 +87,7 @@ const server = async config => {
     const privateKey = PRIVATE_KEY 
     const keyPair = ec.keyFromPrivate(privateKey, "hex")
     const publicKey = keyPair.getPublic("hex")
+
     process.on("uncaughtException", err => fastify.log.error(err))
     await codeDB.put(EMPTY_HASH, "")
     const server = new WS.Server({ port: PORT })
@@ -121,14 +120,17 @@ const server = async config => {
                     break
 
                 case TYPE.SEND_BLOCK:
-                    sendBlock(_msg, currentSyncBlock, chainInfo, 
+                    sendBlock(
+                        _msg, currentSyncBlock, chainInfo, 
                         stateDB, codeDB, blockDB, bhashDB, 
                         opened, MY_ADDRESS, ENABLE_LOGGING)
                     break
 
                 case TYPE.HANDSHAKE:
-                    handshake(_msg, MAX_PEERS, MY_ADDRESS, 
-                        address, connected, opened, connectedNodes)
+                    handshake(
+                        _msg, MAX_PEERS, MY_ADDRESS, 
+                        address, connected, opened, 
+                        connectedNodes)
             }
         })
     })
@@ -151,7 +153,10 @@ const server = async config => {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(publicKey, chainInfo, stateDB, BLOCK_GAS_LIMIT, ENABLE_CHAIN_REQUEST, worker)
+    if (ENABLE_MINING) loopMine(
+        publicKey, BLOCK_GAS_LIMIT, stateDB, 
+        blockDB, bhashDB, codeDB, chainInfo, 
+        worker, mined, ENABLE_CHAIN_REQUEST)
 
     if (ENABLE_RPC){
         const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 

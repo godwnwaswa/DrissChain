@@ -17,7 +17,10 @@ const { buildMerkleTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
 const {executeTx} = require('./execute-tx')
 
-export const mine = async (publicKey, BLOCK_GAS_LIMIT, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, mined) => {
+export const mine = async (
+    publicKey, BLOCK_GAS_LIMIT, stateDB, 
+    blockDB, bhashDB, codeDB, chainInfo, 
+    worker, mined) => {
 
     const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {

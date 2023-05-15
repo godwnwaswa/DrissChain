@@ -15,10 +15,9 @@ const { BLOCK_TIME } = require("../../config.json")
 const {mine} = require('./mine')
 
 export const loopMine = (
-    publicKey, chainInfo, BLOCK_GAS_LIMIT, 
-    ENABLE_CHAIN_REQUEST, worker, stateDB, 
+    publicKey, BLOCK_GAS_LIMIT, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined) => {
+    worker, mined, ENABLE_CHAIN_REQUEST) => {
 
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
