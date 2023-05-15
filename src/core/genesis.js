@@ -8,8 +8,8 @@ const { FIRST_ACCOUNT } = require("../config.json");
 /**
  * Generates the genesis block. Handles different configurations of the chain like ICO.
 */
-function generateGenesisBlock() {
+function genesisBlock() {
     return new Block(1, Date.now(), [], 1, "", FIRST_ACCOUNT);
 }
 
-module.exports = generateGenesisBlock;
+module.exports = genesisBlock;
