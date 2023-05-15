@@ -67,17 +67,17 @@ const fastify = require('fastify')({
  * Isolated dependencies
 */
 
-const connect = require("./server/connect")
-const sendTx = require("./server/send-tx")
-const chainRequest = require("./server/chain-request")
-const loopMine = require("./server/loop-mine")
+const {connect} = require("./server/connect")
+const {sendTx} = require("./server/send-tx")
+const {chainRequest} = require("./server/chain-request")
+const {loopMine} = require("./server/loop-mine")
 
 
 
 /**
  * Starts a Drisseum node at a specified WS address.
  * */
-const server = async options => {
+const server = async config => {
     const { 
         PORT = 3000, RPC_PORT = 5000, 
         PEERS = [], MAX_PEERS = 10, 
@@ -85,7 +85,7 @@ const server = async options => {
         ENABLE_MINING = false, ENABLE_LOGGING = false, 
         ENABLE_RPC = false, PRIVATE_KEY = null, 
         ENABLE_CHAIN_REQUEST = false 
-    } = options
+    } = config
 
     const privateKey = PRIVATE_KEY 
     const keyPair = ec.keyFromPrivate(privateKey, "hex")
@@ -146,7 +146,7 @@ const server = async options => {
         ENABLE_CHAIN_REQUEST, 
         ENABLE_LOGGING, 
         chainInfo)
-        
+
     if (ENABLE_RPC){
         const main = rpc(
             RPC_PORT, 
