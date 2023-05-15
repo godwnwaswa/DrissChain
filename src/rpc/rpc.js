@@ -284,7 +284,11 @@ const signTxn = (params, keyPair) => {
   }
 }
 
-
+/**
+ * @param PORT rpc port
+ * @param client - {publicKey, mining: ENABLE_MINING} 
+ * @param txHandler sendTX
+*/
 const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) => {
   const handleRPC = async (request, reply) => {
     const { method, params, id } = request.body
@@ -356,7 +360,7 @@ const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
 
 
   // Start the server
-  const main = (fastify) => {
+  const main = () => {
     fastify.post('/jsonrpc', async (request, reply) => {
       try {
         const response = await handleRPC(request, reply)
