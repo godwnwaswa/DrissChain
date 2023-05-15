@@ -6,8 +6,6 @@ const EC = require("elliptic").ec, ec = new EC("secp256k1")
 const { Level } = require('level')
 const { fork } = require("child_process")
 
-const Block = require("../core/block")
-const Transaction = require("../core/transaction")
 const changeState = require("../core/state")
 const { 
     BLOCK_REWARD, 
@@ -17,14 +15,10 @@ const {
     FIRST_ACCOUNT, 
     BLOCK_TIME } = require("../config.json")
 
-const { produceMsg, sendMsg } = require("./message")
 const genesisBlock = require("../core/genesis")
-const { addTx, clearDepreciatedTxns } = require("../core/txPool")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
-const { verifyBlock, updateDifficulty } = require("../consensus/consensus")
 const { parseJSON, indexTxns } = require("../utils/utils")
-const drisscript = require("../core/runtime")
 const { buildMerkleTree } = require("../core/merkle")
 
 const opened = []  // Addresses and sockets from connected nodes.
@@ -72,7 +66,7 @@ const {sendTx} = require("./server/send-tx")
 const {chainRequest} = require("./server/chain-request")
 const {loopMine} = require("./server/loop-mine")
 
-//types
+//message type cases
 const {newBlock} = require("./types/new-block")
 const {requestBlock} = require("./types/req-block")
 const {handshake} = require("./types/handshake")
@@ -152,13 +146,13 @@ const server = async config => {
         }
     }
 
-    PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes, fastify))
+    PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes))
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, chainInfo)
+    if (ENABLE_MINING) loopMine(publicKey, ENABLE_LOGGING, chainInfo, ENABLE_CHAIN_REQUEST)
 
     if (ENABLE_RPC){
         const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 
