@@ -287,7 +287,7 @@ const signTxn = (params, keyPair) => {
 /**
  * @param PORT rpc port
  * @param client - {publicKey, mining: ENABLE_MINING} 
- * @param txHandler sendTX
+ * @param txHandler sendTx
 */
 const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) => {
   const handleRPC = async (request, reply) => {

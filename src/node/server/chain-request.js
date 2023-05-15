@@ -6,7 +6,7 @@ const {
 const { produceMsg } = require("../message")
 const TYPE = require("../message-types")
 
-export const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS) => {
+const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS) => {
     const blockNumbers = await blockDB.keys().all()
     if (blockNumbers.length !== 0) {
         currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
@@ -30,3 +30,6 @@ export const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, M
     }, 5000)
 
 }
+
+
+module.exports = chainRequest

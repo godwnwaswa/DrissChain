@@ -14,7 +14,7 @@ const fastify = require('fastify')({
 const { BLOCK_TIME } = require("../../config.json")
 const {mine} = require('./mine')
 
-export const loopMine = (
+const loopMine = (
     publicKey, BLOCK_GAS_LIMIT, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
     worker, mined, ENABLE_CHAIN_REQUEST) => {
@@ -32,3 +32,5 @@ export const loopMine = (
         }
     }, BLOCK_TIME)
 }
+
+module.exports = loopMine

@@ -17,7 +17,7 @@ const { buildMerkleTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
 const {executeTx} = require('./execute-tx')
 
-export const mine = async (
+const mine = async (
     publicKey, BLOCK_GAS_LIMIT, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
     worker, mined) => {
@@ -100,3 +100,4 @@ export const mine = async (
         .catch(err => fastify.log.error(err))
 }
 
+module.exports = mine

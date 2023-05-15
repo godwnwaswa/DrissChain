@@ -14,7 +14,7 @@ const Transaction = require("../../core/transaction")
 const drisscript = require("../../core/runtime")
 const { EMPTY_HASH } = require("../../config.json")
 
-export const executeTx = async (tx, totalContractGas, stateDB, codeDB, states, code, skipped, storedAddresses) => {
+const executeTx = async (tx, totalContractGas, stateDB, codeDB, states, code, skipped, storedAddresses) => {
     const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
     if (skipped[txSenderAddress]) return // Check if transaction is from an ignored address.
@@ -71,3 +71,5 @@ export const executeTx = async (tx, totalContractGas, stateDB, codeDB, states, c
         }
     }
 }
+
+module.exports = executeTx

@@ -159,8 +159,11 @@ const server = async config => {
         worker, mined, ENABLE_CHAIN_REQUEST)
 
     if (ENABLE_RPC){
+        const _sendTx = (tx) => {
+            sendTx(tx, opened, chainInfo, stateDB)
+        }
         const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 
-            sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
+            _sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
         main()
     }
     

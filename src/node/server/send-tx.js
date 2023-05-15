@@ -17,7 +17,7 @@ const TYPE = require("../message-types")
 /**
  * Broadcasts a transaction to other nodes.
 */
-export const sendTx = async (tx, opened, chainInfo, stateDB) => {
+const sendTx = async (tx, opened, chainInfo, stateDB) => {
     fastify.log.info("Tx received on Drisseum.")
     sendMsg(produceMsg(TYPE.CREATE_TRANSACTION, tx), opened)
     const res = await addTx(tx, chainInfo, stateDB)
@@ -25,3 +25,5 @@ export const sendTx = async (tx, opened, chainInfo, stateDB) => {
         fastify.log.info(res.msg)
     } else {fastify.log.error(res.msg)}
 }
+
+module.exports = sendTx
