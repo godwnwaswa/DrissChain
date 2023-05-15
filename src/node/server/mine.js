@@ -21,6 +21,7 @@ const executeTx = require('./execute-tx')
 const { BLOCK_REWARD } = require("../../config.json")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { produceMsg, sendMsg } = require("../message")
+const TYPE = require("../message-types")
 
 const mine = async (
     publicKey, BLOCK_GAS_LIMIT, stateDB, 
