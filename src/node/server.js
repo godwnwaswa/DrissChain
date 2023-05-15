@@ -19,7 +19,6 @@ const genesisBlock = require("../core/genesis")
 const rpc = require("../rpc/rpc")
 const TYPE = require("./message-types")
 const { parseJSON, indexTxns } = require("../utils/utils")
-const { buildMerkleTree } = require("../core/merkle")
 
 const opened = []  // Addresses and sockets from connected nodes.
 const connected = []  // Addresses from connected nodes.
@@ -152,7 +151,7 @@ const server = async config => {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(publicKey, ENABLE_LOGGING, chainInfo, ENABLE_CHAIN_REQUEST)
+    if (ENABLE_MINING) loopMine(publicKey, chainInfo, stateDB, BLOCK_GAS_LIMIT, ENABLE_CHAIN_REQUEST, worker)
 
     if (ENABLE_RPC){
         const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 
