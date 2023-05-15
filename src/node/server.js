@@ -72,6 +72,12 @@ const {sendTx} = require("./server/send-tx")
 const {chainRequest} = require("./server/chain-request")
 const {loopMine} = require("./server/loop-mine")
 
+//types
+const {newBlock} = require("./types/new-block")
+const {requestBlock} = require("./types/req-block")
+const {handshake} = require("./types/handshake")
+const {sendBlock} = require("./types/send-block")
+const {createTx} = require("./types/create-tx")
 
 
 /**
