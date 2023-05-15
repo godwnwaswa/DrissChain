@@ -62,6 +62,15 @@ const logger = pino({
 const fastify = require('fastify')({
     logger: logger
 })
+
+/**
+ * Isolated dependencies
+*/
+
+const connect = require("./server/connect")
+
+
+
 /**
  * Starts a Drisseum node at a specified WS address.
  * */
@@ -123,7 +132,7 @@ const server = async options => {
         }
     }
 
-    PEERS.forEach(peer => connect(MY_ADDRESS, peer))
+    PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes, fastify))
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
         requestChain()

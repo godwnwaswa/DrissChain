@@ -1,7 +1,9 @@
+const { produceMsg } = require("../message")
+const TYPE = require("./message-types")
 /**
  * Connects to a WS server at the specified address.
  * */
-const connect = (MY_ADDRESS, address) => {
+export const connect = (MY_ADDRESS, address, connected, opened, connectedNodes, fastify) => {
     /**
      * Check if the `address` is not already in the `connected` array and if it is not equal to `MY_ADDRESS`.
      * */
