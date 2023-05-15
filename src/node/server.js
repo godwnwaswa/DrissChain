@@ -104,31 +104,38 @@ const server = async config => {
         /**
          * The message handler
          * */
-        socket.on("message", async message => {
-            const _message = parseJSON(message)
-            switch (_message.type) {
+        socket.on("message", async msg => {
+            const _msg = parseJSON(msg)
+            switch (_msg.type) {
                 case TYPE.NEW_BLOCK:
-                    newBlock(_message)
+                    newBlock(
+                        _msg, chainInfo, currentSyncBlock, 
+                        stateDB, codeDB, blockDB, bhashDB, 
+                        ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, 
+                        ENABLE_MINING, mined, worker)
                     break
 
                 case TYPE.CREATE_TRANSACTION:
                     if (!ENABLE_CHAIN_REQUEST){
-                        createTx(_message, stateDB, chainInfo)
+                        createTx(_msg, stateDB, chainInfo)
                     }
                     break
 
                 case TYPE.REQUEST_BLOCK:
                     if (!ENABLE_CHAIN_REQUEST) {
-                        requestBlock(_message, opened, blockDB)
+                        requestBlock(_msg, opened, blockDB)
                     }
                     break
 
                 case TYPE.SEND_BLOCK:
-                    sendBlock(_message, currentSyncBlock, chainInfo, stateDB, codeDB, blockDB, bhashDB, opened, MY_ADDRESS, ENABLE_LOGGING)
+                    sendBlock(_msg, currentSyncBlock, chainInfo, 
+                        stateDB, codeDB, blockDB, bhashDB, 
+                        opened, MY_ADDRESS, ENABLE_LOGGING)
                     break
 
                 case TYPE.HANDSHAKE:
-                    handshake(_message, MAX_PEERS, MY_ADDRESS, address, connected, opened, connectedNodes)
+                    handshake(_msg, MAX_PEERS, MY_ADDRESS, 
+                        address, connected, opened, connectedNodes)
             }
         })
     })
@@ -151,20 +158,14 @@ const server = async config => {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS)
     }
 
-    if (ENABLE_MINING) loopMine(
-        publicKey, 
-        ENABLE_CHAIN_REQUEST, 
-        ENABLE_LOGGING, 
-        chainInfo)
+    if (ENABLE_MINING) loopMine(publicKey, ENABLE_CHAIN_REQUEST, ENABLE_LOGGING, chainInfo)
 
     if (ENABLE_RPC){
-        const main = rpc(
-            RPC_PORT, 
-            { publicKey, mining: ENABLE_MINING }, 
+        const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 
             sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
         main()
     }
     
 }
 
-module.exports = { server }
+module.exports = {server}
