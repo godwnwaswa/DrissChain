@@ -11,7 +11,13 @@ const fastify = require('fastify')({
     logger: logger
 })
 
-export const mine = async (publicKey, BLOCK_GAS_LIMIT, stateDB, chainInfo, worker) => {
+const { fork } = require("child_process")
+const Block = require("../../core/block")
+const { buildMerkleTree } = require("../../core/merkle")
+const { indexTxns } = require("../../utils/utils")
+const {executeTx} = require('./execute-tx')
+
+export const mine = async (publicKey, BLOCK_GAS_LIMIT, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, mined) => {
 
     const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {
@@ -64,7 +70,7 @@ export const mine = async (publicKey, BLOCK_GAS_LIMIT, stateDB, chainInfo, worke
                 states[result.coinbase].balance = (BigInt(states[result.coinbase].balance) + BigInt(BLOCK_REWARD) + gas).toString()
                 // Transit state
                 for (const address in storage) {
-                    const storageDB = new Level(__dirname + "/../log/accountStore/" + address)
+                    const storageDB = new Level(__dirname + "/../../log/accountStore/" + address)
                     const keys = Object.keys(storage[address])
                     states[address].storageRoot = buildMerkleTree(keys.map(key => key + " " + storage[address][key])).val
                     for (const key of keys) {
