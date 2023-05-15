@@ -1,6 +1,9 @@
-const mine = async (publicKey, ENABLE_LOGGING) => {
+let worker = fork(`${__dirname}/../../miner/worker.js`) // Worker thread (for PoW mining).
+const Block = require("../../core/block")
 
-    const mine = (block, difficulty) => {
+export const mine = async (publicKey, ENABLE_LOGGING, stateDB, chainInfo) => {
+
+    const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result))
             worker.send({ type: "MINE", data: [block, difficulty] })
@@ -8,74 +11,27 @@ const mine = async (publicKey, ENABLE_LOGGING) => {
     }
 
     // Create a new block.
-    const block = new Block(chainInfo.latestBlock.blockNumber + 1, Date.now(), [],chainInfo.difficulty, chainInfo.latestBlock.hash, SHA256(publicKey))
+    const block = new Block(
+        chainInfo.latestBlock.blockNumber + 1, 
+        Date.now(), [],chainInfo.difficulty, 
+        chainInfo.latestBlock.hash, 
+        SHA256(publicKey))
+
     // Collect a list of transactions to mine
     const transactionsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
+
     let totalContractGas = 0n, totalTxGas = 0n
     const existedAddresses = await stateDB.keys().all()
     for (const tx of chainInfo.txPool) {
-        if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        const txSenderPubkey = Transaction.getPubKey(tx)
-        const txSenderAddress = SHA256(txSenderPubkey)
-        if (skipped[txSenderAddress]) continue // Check if transaction is from an ignored address.
-        // Normal coin transfers
-        if (!states[txSenderAddress]) {
-            const senderState = await stateDB.get(txSenderAddress)
-            states[txSenderAddress] = senderState
-            code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
-            if (senderState.codeHash !== EMPTY_HASH) {
-                skipped[txSenderAddress] = true
-                continue
-            }
-            states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
-        } else {
-            if (states[txSenderAddress].codeHash !== EMPTY_HASH) {
-                skipped[txSenderAddress] = true
-                continue
-            }
-            states[txSenderAddress].balance = (BigInt(states[txSenderAddress].balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
-        }
-        if (!existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
-            states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
-            code[EMPTY_HASH] = ""
-        }
-        if (existedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
-            states[tx.recipient] = await stateDB.get(tx.recipient)
-            code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
-        }
-        states[tx.recipient].balance = (BigInt(states[tx.recipient].balance) + BigInt(tx.amount)).toString()
-        // Contract deployment
-        if (states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string" ) {
-            states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
-            code[states[txSenderAddress].codeHash] = tx.additionalData.scBody
-        }
-        // Update nonce
-        states[txSenderAddress].nonce += 1
-        // Decide to drop or add transaction to block
-        if (BigInt(states[txSenderAddress].balance) < 0n) {
-            skipped[txSenderAddress] = true
-            continue
-        } else {
-            transactionsToMine.push(tx)
-            totalContractGas += BigInt(tx.additionalData.contractGas || 0)
-            totalTxGas += BigInt(tx.gas) + BigInt(tx.additionalData.contractGas || 0)
-        }
-
-        // Contract execution
-        if (states[tx.recipient].codeHash !== EMPTY_HASH) {
-            const contractInfo = { address: tx.recipient }
-            const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
-            for (const account of Object.keys(newState)) {
-                states[account] = newState[account]
-                storage[tx.recipient] = newStorage
-            }
-        }
+        executeTx(tx, totalContractGas, totalTxGas, totalTxGas)
     }
+
     block.transactions = transactionsToMine // Add transactions to block
     block.hash = Block.getHash(block) // Re-hash with new transactions
     block.txRoot = buildMerkleTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
+
     // Mine the block.
-    mine(block, chainInfo.difficulty)
+    work(block, chainInfo.difficulty)
         .then(async result => {
             // If the block is not mined before, we will add it to our chain and broadcast this new block.
             if (!mined) {
@@ -119,7 +75,7 @@ const mine = async (publicKey, ENABLE_LOGGING) => {
             }
             // Re-create the worker thread
             worker.kill()
-            worker = fork(`${__dirname}/../miner/worker.js`)
+            worker = fork(`${__dirname}/../../miner/worker.js`)
         })
         .catch(err => fastify.log.error(err))
 }
