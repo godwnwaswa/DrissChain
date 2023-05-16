@@ -9,7 +9,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
  * @param input instructions
  * @param tx transaction object
  * */
-const drisscript = async (input, originalState = {}, gas, stateDB, block, tx, contractInfo = {}, enableLogging = false) => {
+const drisscript = async (input, originalState = {}, gas, stateDB, block, tx, contractInfo = {}) => {
 	const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
 	const instructions = input.trim().replace(/\t/g, "").split("\n").map(ins => ins.trim()).filter(ins => ins !== "")
 	const memory = {}, state = originalState, storage = {}
@@ -171,7 +171,7 @@ const drisscript = async (input, originalState = {}, gas, stateDB, block, tx, co
 				setMem(args[0], "0x" + SHA256(getValue(args[1])))
 				break
 			case "log": // Log out data
-				if (enableLogging) console.log("LOG ::", contractInfo.address + ":", getValue(args[0]))
+				console.log("LOG ::", contractInfo.address + ":", getValue(args[0]))
 				break
 			case "gas": // Show current available gas
 				setMem(args[0], "0x" + gas.toString(16))
