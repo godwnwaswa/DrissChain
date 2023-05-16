@@ -35,7 +35,7 @@ const mine = async (
     const storedAddresses = await stateDB.keys().all()
     for (const tx of chainInfo.txPool) {
         if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        executeTx(tx, totalContractGas, totalTxGas, totalTxGas, fastify)
+        executeTx(tx, totalContractGas, transactionsToMine, stateDB, codeDB, states, code, skipped, storedAddresses, fastify)
     }
 
     block.transactions = transactionsToMine // Add transactions to block

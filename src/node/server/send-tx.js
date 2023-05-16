@@ -1,5 +1,6 @@
 const { produceMsg, sendMsg } = require("../message")
 const TYPE = require("../message-types")
+const { addTx } = require("../../core/txPool")
 
 /**
  * Broadcasts a transaction to other nodes.

@@ -68,7 +68,7 @@ const clearDepreciatedTxns = async (chainInfo, stateDB) => {
         const { valid, msg} = await Transaction.isValid(tx, stateDB)
         
         if (valid && tx.nonce - 1 === maxNonce[txSenderAddress]) {
-            fastify.log.log(msg)
+            fastify.log.info(msg)
             newTxPool.push(tx)
             maxNonce[txSenderAddress] = tx.nonce
         } else{ fastify.log.error(msg)}
