@@ -80,7 +80,9 @@ const processTx = async (
     // Contract execution
     if (res.states[tx.recipient].codeHash !== EMPTY_HASH) {
         const contractInfo = { address: tx.recipient }
-        const [newState, newStorage] = await drisscript(res.code[res.states[tx.recipient].codeHash], res.states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
+        const [newState, newStorage] = await drisscript(res.code[res.states[tx.recipient].codeHash], 
+            res.states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo )
+
         for (const account of Object.keys(newState)) {
             res.states[account] = newState[account]
             res.storage[tx.recipient] = newStorage
