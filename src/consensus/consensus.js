@@ -21,29 +21,30 @@ const fastify = require('fastify')({
 
 /**
  * Checks if a block is valid under specified conditions.
+ * @param nB new block
 */
-const verifyBlock = async (newBlock, chainInfo, stateDB, codeDB, enableLogging = false) => {
+const verifyBlock = async (nB, chainInfo, stateDB, codeDB, enableLogging = false) => {
     return (
-        Block.hasValidPropTypes(newBlock) && 
-        SHA256(`${newBlock.blockNumber.toString()}${newBlock.timestamp.toString()}${newBlock.txRoot}${newBlock.difficulty.toString()}${chainInfo.latestBlock.hash}${newBlock.nonce.toString()}`) === newBlock.hash &&
-        chainInfo.latestBlock.hash === newBlock.parentHash && 
-        newBlock.hash.startsWith("00000" + Array(Math.floor(log16(chainInfo.difficulty)) + 1).join("0")) && 
-        newBlock.difficulty === chainInfo.difficulty && 
-        await Block.hasValidTxOrder(newBlock, stateDB) && 
-        newBlock.timestamp > chainInfo.latestBlock.timestamp && 
-        newBlock.timestamp < Date.now() &&
-        newBlock.blockNumber - 1 === chainInfo.latestBlock.blockNumber &&
-        buildMerkleTree(indexTxns(newBlock.transactions)).val === newBlock.txRoot &&
-        Block.hasValidGasLimit(newBlock) &&
-        await Block.verifyTxAndTransit(newBlock, stateDB, codeDB, enableLogging)
+        Block.hasValidPropTypes(nB) && 
+        SHA256(`${nB.blockNumber.toString()}${nB.timestamp.toString()}${nB.txRoot}${nB.difficulty.toString()}${chainInfo.latestBlock.hash}${nB.nonce.toString()}`) === nB.hash &&
+        chainInfo.latestBlock.hash === nB.parentHash && 
+        nB.hash.startsWith("00000" + Array(Math.floor(log16(chainInfo.difficulty)) + 1).join("0")) && 
+        nB.difficulty === chainInfo.difficulty && 
+        await Block.hasValidTxOrder(nB, stateDB) && 
+        nB.timestamp > chainInfo.latestBlock.timestamp && 
+        nB.timestamp < Date.now() &&
+        nB.blockNumber - 1 === chainInfo.latestBlock.blockNumber &&
+        buildMerkleTree(indexTxns(nB.transactions)).val === nB.txRoot &&
+        Block.hasValidGasLimit(nB) &&
+        await Block.verifyTxAndTransit(nB, stateDB, codeDB, enableLogging)
     )
 }
 
-const updateDifficulty = async (newBlock, chainInfo, blockDB) => {
-    if (newBlock.blockNumber % 10 === 0) 
+const updateDifficulty = async (nB, chainInfo, blockDB) => {
+    if (nB.blockNumber % 10 === 0) 
     {
-        const oldBlock = await blockDB.get((newBlock.blockNumber - 9).toString());
-        chainInfo.difficulty = Math.ceil(chainInfo.difficulty *  10* BLOCK_TIME / (newBlock.timestamp - oldBlock.timestamp));
+        const oldBlock = await blockDB.get((nB.blockNumber - 9).toString());
+        chainInfo.difficulty = Math.ceil(chainInfo.difficulty *  10* BLOCK_TIME / (nB.timestamp - oldBlock.timestamp));
     }
 }
 
