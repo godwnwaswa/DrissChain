@@ -50,7 +50,7 @@ class Block {
     /**
      * Verifies transactions in the block and transists the state.
      * */
-    static async verifyTxAndTransit(block, stateDB, codeDB, enableLogging = false) {
+    static async verifyTxAndTransit(block, stateDB, codeDB) {
         for (const tx of block.transactions) {
             const {valid, msg} = await Transaction.isValid(tx, stateDB)
             
@@ -125,7 +125,8 @@ class Block {
             // Contract execution
             if (states[tx.recipient].codeHash !== EMPTY_HASH) {
                 const contractInfo = { address: tx.recipient }
-                const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, enableLogging)
+                const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], 
+                    states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo )
 
                 for (const account of Object.keys(newState)) {
                     states[account] = newState[account]

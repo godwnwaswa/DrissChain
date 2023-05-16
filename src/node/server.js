@@ -86,8 +86,7 @@ const server = async (config, fastify) => {
                 case TYPE.NEW_BLOCK:
                     newBlock(
                         _msg, chainInfo, currentSyncBlock, 
-                        stateDB, codeDB, blockDB, bhashDB, 
-                        ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, 
+                        stateDB, codeDB, blockDB, bhashDB, ENABLE_CHAIN_REQUEST, 
                         ENABLE_MINING, mined, worker, fastify)
                     break
 
@@ -107,7 +106,7 @@ const server = async (config, fastify) => {
                     sendBlock(
                         _msg, currentSyncBlock, chainInfo, 
                         stateDB, codeDB, blockDB, bhashDB, 
-                        opened, MY_ADDRESS, ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, fastify)
+                        opened, MY_ADDRESS, ENABLE_CHAIN_REQUEST, fastify)
                     break
 
                 case TYPE.HANDSHAKE:

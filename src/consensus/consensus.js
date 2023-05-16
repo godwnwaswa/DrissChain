@@ -5,25 +5,11 @@ const { buildMerkleTree } = require("../core/merkle");
 const { BLOCK_REWARD, BLOCK_TIME } = require("../config.json");
 const { indexTxns } = require("../utils/utils");
 
-
-const pino = require('pino')
-const logger = pino({
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      ignore: 'pid,hostname',
-    },
-  },
-})
-const fastify = require('fastify')({
-  logger : logger
-})
-
 /**
  * Checks if a block is valid under specified conditions.
  * @param nB new block
 */
-const verifyBlock = async (nB, chainInfo, stateDB, codeDB, enableLogging = false) => {
+const verifyBlock = async (nB, chainInfo, stateDB, codeDB ) => {
     return (
         Block.hasValidPropTypes(nB) && 
         SHA256(`${nB.blockNumber.toString()}${nB.timestamp.toString()}${nB.txRoot}${nB.difficulty.toString()}${chainInfo.latestBlock.hash}${nB.nonce.toString()}`) === nB.hash &&
@@ -36,7 +22,7 @@ const verifyBlock = async (nB, chainInfo, stateDB, codeDB, enableLogging = false
         nB.blockNumber - 1 === chainInfo.latestBlock.blockNumber &&
         buildMerkleTree(indexTxns(nB.transactions)).val === nB.txRoot &&
         Block.hasValidGasLimit(nB) &&
-        await Block.verifyTxAndTransit(nB, stateDB, codeDB, enableLogging)
+        await Block.verifyTxAndTransit(nB, stateDB, codeDB)
     )
 }
 

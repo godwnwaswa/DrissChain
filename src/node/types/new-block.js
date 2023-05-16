@@ -4,8 +4,7 @@ const { sendMsg } = require("../message")
 
 const newBlock = async (
     msg, chainInfo, currentSyncBlock, 
-    stateDB, codeDB, blockDB, bhashDB, 
-    ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, 
+    stateDB, codeDB, blockDB, bhashDB,ENABLE_CHAIN_REQUEST, 
     ENABLE_MINING, mined, worker, fastify) => {
         
     const newBlock = msg.data
@@ -21,7 +20,7 @@ const newBlock = async (
     if (newBlock.parentHash !== chainInfo.latestBlock.parentHash && 
         (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))) {
         chainInfo.checkedBlock[newBlock.hash] = true
-        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
+        if (await verifyBlock(newBlock, chainInfo, stateDB, codeDB)) {
             fastify.log.info("Block verified. Syncing to the chain...")
             if (ENABLE_MINING) {
                 mined = true //check their chain length & sync if > your chain else mine

@@ -6,7 +6,7 @@ const TYPE = require("../message-types")
 const sendBlock = async (
     msg, currentSyncBlock, chainInfo, 
     stateDB, codeDB, blockDB, bhashDB, 
-    opened, MY_ADDRESS, ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, fastify) => {
+    opened, MY_ADDRESS, ENABLE_CHAIN_REQUEST, fastify) => {
     const block = msg.data
     if (ENABLE_CHAIN_REQUEST && currentSyncBlock === block.blockNumber) {
         fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")
@@ -17,7 +17,7 @@ const sendBlock = async (
             await bhashDB.put(block.hash, block.blockNumber.toString())
             if (!chainInfo.latestSyncBlock) {
                 chainInfo.latestSyncBlock = block
-                await changeState(block, stateDB, codeDB, ENABLE_LOGGING)
+                await changeState(block, stateDB, codeDB)
             }
             chainInfo.latestBlock = block
             await updateDifficulty(block, chainInfo, blockDB)
