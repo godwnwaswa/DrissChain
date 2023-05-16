@@ -1,5 +1,4 @@
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
-const { fork } = require("child_process")
 const Block = require("../../core/block")
 const { buildMerkleTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
@@ -13,9 +12,9 @@ const TYPE = require("../message-types")
 const mine = async (
     publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined, opened, fastify) => {
+    worker, mined, opened, fastify, fork) => {
 
-    const work = (block, difficulty) => {
+    const work = (block, difficulty, worker) => {
         return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result))
             worker.send({ type: "MINE", data: [block, difficulty] })
@@ -44,7 +43,7 @@ const mine = async (
     block.txRoot = buildMerkleTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
 
     // Mine the block.
-    work(block, chainInfo.difficulty)
+    work(block, chainInfo.difficulty, worker)
         .then(async result => {
             // If the block is not mined before, we will add it to our chain and broadcast this new block.
             if (!mined) {
@@ -87,8 +86,8 @@ const mine = async (
                 mined = false
             }
             // Re-create the worker thread
-            worker.kill()
-            worker = fork(`${__dirname}/../../miner/worker.js`)
+            // worker.kill()
+            // worker = fork(`${__dirname}/../../miner/worker.js`)
         })
         .catch(err => fastify.log.error(err))
 }

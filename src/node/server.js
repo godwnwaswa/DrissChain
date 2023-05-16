@@ -122,13 +122,12 @@ const server = async config => {
                     sendBlock(
                         _msg, currentSyncBlock, chainInfo, 
                         stateDB, codeDB, blockDB, bhashDB, 
-                        opened, MY_ADDRESS, ENABLE_LOGGING, fastify)
+                        opened, MY_ADDRESS, ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, fastify)
                     break
 
                 case TYPE.HANDSHAKE:
                     handshake(
-                        _msg, MAX_PEERS, MY_ADDRESS, 
-                        address, connected, opened, 
+                        _msg, MAX_PEERS, MY_ADDRESS, connected, opened, 
                         connectedNodes, fastify)
             }
         })
@@ -156,7 +155,7 @@ const server = async config => {
         loopMine(
             publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
             blockDB, bhashDB, codeDB, chainInfo, 
-            worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify)
+            worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify, fork)
     }
 
     if (ENABLE_RPC){

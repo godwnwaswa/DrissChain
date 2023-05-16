@@ -1,3 +1,4 @@
+const WS = require("ws")
 const { produceMsg } = require("../message")
 const TYPE = require("../message-types")
 /**

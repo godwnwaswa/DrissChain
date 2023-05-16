@@ -3,7 +3,7 @@ const mine = require('./mine')
 
 const loopMine = (publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify) => {
+    worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify, fork) => {
 
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
@@ -14,7 +14,7 @@ const loopMine = (publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB,
             if (!ENABLE_CHAIN_REQUEST) await mine(
                 publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
                 blockDB, bhashDB, codeDB, chainInfo, 
-                worker, mined, opened, fastify)
+                worker, mined, opened, fastify, fork)
         }
     }, BLOCK_TIME)
 }
