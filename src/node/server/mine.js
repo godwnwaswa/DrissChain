@@ -3,7 +3,7 @@ const Block = require("../../core/block")
 const { genMTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
 const { updateDifficulty } = require("../../consensus/consensus")
-const execTx = require('./execute-tx')
+const processTx = require('./process-tx')
 const { BLOCK_REWARD } = require("../../config.json")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { prodMsg, sendMsg } = require("../message")
@@ -39,7 +39,7 @@ const mine = async (
     // fastify.log.info(`txpool: ${chainInfo.txPool}`)
     for (const tx of chainInfo.txPool) {
         if (tContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        const res = await execTx(
+        const res = await processTx(
             tx, tContractGas, tTxGas,
             txnsToMine, stateDB, codeDB,
             states, code, skipped, storage, storedAddresses, fastify)

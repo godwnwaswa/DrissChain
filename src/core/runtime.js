@@ -6,12 +6,14 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 
 /**
  * A script that handles logic in smart contracts.
+ * @param input instructions
+ * @param tx transaction object
  * */
-const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo, contractInfo, enableLogging = false) => {
+const drisscript = async (input, originalState = {}, gas, stateDB, block, tx, contractInfo = {}, enableLogging = false) => {
 	const storageDB = new Level(__dirname + "/../log/accountStore/" + contractInfo.address)
 	const instructions = input.trim().replace(/\t/g, "").split("\n").map(ins => ins.trim()).filter(ins => ins !== "")
 	const memory = {}, state = originalState, storage = {}
-	const userArgs = typeof txInfo.additionalData.txCallArgs !== "undefined" ? txInfo.additionalData.txCallArgs.map(arg => "0x" + arg.toString(16)) : []
+	const userArgs = typeof tx.additionalData.txCallArgs !== "undefined" ? tx.additionalData.txCallArgs.map(arg => "0x" + arg.toString(16)) : []
 
 	let ptr = 0
 	while (ptr < instructions.length && gas >= BigInt("10000000") && instructions[ptr].trim() !== "stop" && instructions[ptr].trim() !== "revert") {
@@ -100,18 +102,18 @@ const drisscript = async (input, originalState = {}, gas, stateDB, block, txInfo
 				setMem(args[0], "0x" + block.difficulty.toString(16))
 				break
 			case "txvalue": // Amount of tokens sent in transaction
-				setMem(args[0], "0x" + txInfo.amount.toString(16))
+				setMem(args[0], "0x" + tx.amount.toString(16))
 				break
 			case "txsender": // Sender of transaction
-				const txSenderPubkey = Transaction.getPubKey(txInfo)
+				const txSenderPubkey = Transaction.getPubKey(tx)
 				const txSenderAddress = SHA256(txSenderPubkey)
 				setMem(args[0], txSenderAddress)
 				break
 			case "txgas": // Transaction gas
-				setMem(args[0], "0x" + txInfo.gas.toString(16))
+				setMem(args[0], "0x" + tx.gas.toString(16))
 				break
 			case "txexecgas": // Contract execution gas
-				setMem(args[0], "0x" + txInfo.additionalData.contractGas.toString(16))
+				setMem(args[0], "0x" + tx.additionalData.contractGas.toString(16))
 				break
 			case "address": // Contract's address
 				setMem(args[0], contractInfo.address)
