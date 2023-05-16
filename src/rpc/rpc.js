@@ -21,7 +21,7 @@ const getBlockNumber = async blockDB => {
 
 
 const getAddress = client => {
-  return { address: SHA256(client.publicKey) }
+  return { address: SHA256(client.pK) }
 }
 
 const getWork = async blockDB => {
@@ -219,11 +219,7 @@ const getTxnByBlockNumberAndIndex = async (params, blockDB) => {
 const getTxnByBlockHashAndIndex = async (params, bhashDB, blockDB) => {
   const { _hash, index } = params
   if
-    (
-    typeof params !== "object" ||
-    typeof _hash !== "string" ||
-    typeof index !== "number"
-  ) {
+    ( typeof params !== "object" || typeof _hash !== "string" || typeof index !== "number" ) {
     return "Invalid prop types."
   }
   else {
@@ -246,17 +242,13 @@ const getTxnByBlockHashAndIndex = async (params, bhashDB, blockDB) => {
 
 const sendTxn = async (params, txHandler) => {
   const { tx } = params
-  if
-    (
-    typeof params !== "object" ||
-    typeof tx !== "object"
-  ) {
+  if ( typeof params !== "object" || typeof tx !== "object" ) {
     return "Invalid prop types."
   }
   else {
     try {
       await txHandler(tx)
-      return { message: "Transaction received." }
+      return { message: "Transaction received on Drisseum." }
     }
     catch (error) {
       console.error(error)
@@ -268,13 +260,7 @@ const sendTxn = async (params, txHandler) => {
 
 const signTxn = (params, keyPair) => {
   const { recipient, amount } = params
-  if
-    (
-    typeof params !== "object" ||
-    typeof recipient !== "string" ||
-    typeof amount !== "number"
-
-  ) {
+  if ( typeof params !== "object" || typeof recipient !== "string" || typeof amount !== "number" ) {
     return "Invalid prop types."
   }
   else {
@@ -286,13 +272,13 @@ const signTxn = (params, keyPair) => {
 
 /**
  * @param PORT rpc port
- * @param client - {publicKey, mining: ENABLE_MINING} 
+ * @param client  obj {pK, mining: ENABLE_MINING}
  * @param txHandler sendTx
 */
 const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB) => {
   const handleRPC = async (request, reply) => {
     const { method, params, id } = request.body
-    const generateResponse = (result, id) => {
+    const genResponse = (result, id) => {
       return { jsonrpc: '2.0', data: result, id: id }
     }
     let result
@@ -302,6 +288,7 @@ const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
         break
       case 'getAddress':
         result = getAddress(client)
+        fastify.log.info(client)
         break
       case 'getWork':
         result = await getWork(blockDB)
@@ -354,12 +341,12 @@ const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
       default:
         result = 'Method not found.'
     }
-    return generateResponse(result, id)
+    return genResponse(result, id)
   }
 
 
 
-  // Start the server
+  // Start the RPC server
   const main = () => {
     fastify.post('/jsonrpc', async (request, reply) => {
       try {
@@ -372,7 +359,7 @@ const rpc = (PORT, client, txHandler, keyPair, stateDB, blockDB, bhashDB, codeDB
     })
     fastify.listen({ port: PORT }, (err) => {
       if (err) {
-        console.error(err)
+        fastify.log.error(err)
         process.exit(1)
       }
     })
