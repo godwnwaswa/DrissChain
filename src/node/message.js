@@ -3,18 +3,12 @@
  * @param {any} data The data to include in the message.
  * @returns {string} A JSON object representation of the message.
  */
-function prodMsg(type, data) 
-{
-    return JSON.stringify({ type, data });
-}
+const prodMsg = (type, data) => JSON.stringify({ type, data }) 
 
 /**
- * @param {string} message The message to send.
+ * @param {string} msg The message to send. >> as returned by prodMsg
  * @param {Array} nodes An array of nodes to send the message to.
  */
-function sendMsg(msg, nodes) 
-{
-    nodes.forEach(node => node.socket.send(msg));
-}
+const sendMsg = (msg, nodes) => nodes.forEach(node => node.socket.send(msg))
 
 module.exports = { prodMsg, sendMsg };
