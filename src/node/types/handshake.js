@@ -1,24 +1,11 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const connect = require('../server/connect')
 
 const handshake = (
     msg, MAX_PEERS, MY_ADDRESS, connected, opened, 
-    connectedNodes) => {
+    connectedNodes, fastify) => {
     const address = msg.data
     if (connectedNodes <= MAX_PEERS) {
-        connect(MY_ADDRESS, address, connected, opened, connectedNodes)
+        connect(MY_ADDRESS, address, connected, opened, connectedNodes, fastify)
     }
 
 }

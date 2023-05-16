@@ -1,20 +1,7 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const TYPE = require("../message-types")
 const { produceMsg } = require("../message")
 
-const requestBlock = async (msg, opened, blockDB) => {
+const requestBlock = async (msg, opened, blockDB, fastify) => {
     const { blockNumber, requestAddress } = msg.data
     const socket = opened.find(node => node.address === requestAddress).socket
     const currentBlockNumber = Math.max(...(await blockDB.keys().all()).map(key => parseInt(key)))

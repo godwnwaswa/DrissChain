@@ -1,22 +1,9 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const { BLOCK_TIME } = require("../../config.json")
 const mine = require('./mine')
 
 const loopMine = (publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined, opened, ENABLE_CHAIN_REQUEST) => {
+    worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify) => {
 
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
@@ -27,7 +14,7 @@ const loopMine = (publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB,
             if (!ENABLE_CHAIN_REQUEST) await mine(
                 publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
                 blockDB, bhashDB, codeDB, chainInfo, 
-                worker, mined, opened)
+                worker, mined, opened, fastify)
         }
     }, BLOCK_TIME)
 }

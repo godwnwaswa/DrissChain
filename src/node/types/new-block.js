@@ -1,17 +1,3 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
-
 const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { sendMsg } = require("../message")
@@ -20,7 +6,7 @@ const newBlock = async (
     msg, chainInfo, currentSyncBlock, 
     stateDB, codeDB, blockDB, bhashDB, 
     ENABLE_LOGGING, ENABLE_CHAIN_REQUEST, 
-    ENABLE_MINING, mined, worker) => {
+    ENABLE_MINING, mined, worker, fastify) => {
         
     const newBlock = msg.data
     if (!chainInfo.checkedBlock[newBlock.hash]) {

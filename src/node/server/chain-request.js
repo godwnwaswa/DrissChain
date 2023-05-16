@@ -6,7 +6,7 @@ const {
 const { produceMsg } = require("../message")
 const TYPE = require("../message-types")
 
-const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS) => {
+const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify) => {
     const blockNumbers = await blockDB.keys().all()
     if (blockNumbers.length !== 0) {
         currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))

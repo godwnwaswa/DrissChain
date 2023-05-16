@@ -1,21 +1,8 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const Transaction = require("../../core/transaction")
 const { sendMsg } = require("../message")
 
-const createTx = async (_msg, stateDB, chainInfo) => {
+const createTx = async (_msg, stateDB, chainInfo, fastify) => {
     const tx = _msg.data
     const {valid, msg} = await Transaction.isValid(tx, stateDB)
     

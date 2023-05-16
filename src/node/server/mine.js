@@ -1,16 +1,3 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const { fork } = require("child_process")
 const Block = require("../../core/block")
@@ -26,7 +13,7 @@ const TYPE = require("../message-types")
 const mine = async (
     publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, 
     blockDB, bhashDB, codeDB, chainInfo, 
-    worker, mined, opened) => {
+    worker, mined, opened, fastify) => {
 
     const work = (block, difficulty) => {
         return new Promise((resolve, reject) => {
@@ -49,7 +36,7 @@ const mine = async (
     const storedAddresses = await stateDB.keys().all()
     for (const tx of chainInfo.txPool) {
         if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        executeTx(tx, totalContractGas, totalTxGas, totalTxGas)
+        executeTx(tx, totalContractGas, totalTxGas, totalTxGas, fastify)
     }
 
     block.transactions = transactionsToMine // Add transactions to block

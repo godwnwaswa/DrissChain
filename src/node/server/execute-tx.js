@@ -1,22 +1,9 @@
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const Transaction = require("../../core/transaction")
 const drisscript = require("../../core/runtime")
 const { EMPTY_HASH } = require("../../config.json")
 
-const executeTx = async (tx, totalContractGas, stateDB, codeDB, states, code, skipped, storedAddresses) => {
+const executeTx = async (tx, totalContractGas, stateDB, codeDB, states, code, skipped, storedAddresses, fastify) => {
     const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
     if (skipped[txSenderAddress]) return // Check if transaction is from an ignored address.
