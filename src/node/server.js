@@ -61,6 +61,7 @@ const connect = require("./server/connect")
 const sendTx = require("./server/send-tx")
 const chainRequest = require("./server/chain-request")
 const loopMine = require("./server/loop-mine")
+const wallet = require("./server/wallet")
 
 //message type cases
 const newBlock = require("./types/new-block")
@@ -83,10 +84,8 @@ const server = async config => {
         ENABLE_CHAIN_REQUEST = false 
     } = config
 
-    const privateKey = PRIVATE_KEY 
-    const keyPair = ec.keyFromPrivate(privateKey, "hex")
-    const publicKey = keyPair.getPublic("hex")
-
+    
+    const { pK , keyPair } = wallet(PRIVATE_KEY)
     process.on("uncaughtException", err => fastify.log.error(err))
     await codeDB.put(EMPTY_HASH, "")
     const server = new WS.Server({ port: PORT })
@@ -153,7 +152,7 @@ const server = async config => {
 
     if (ENABLE_MINING) {
         loopMine(
-            publicKey, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
+            pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, 
             blockDB, bhashDB, codeDB, chainInfo, 
             worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify, fork)
     }
@@ -162,7 +161,7 @@ const server = async config => {
         const _sendTx = (tx) => {
             sendTx(tx, opened, chainInfo, stateDB, fastify)
         }
-        const main = rpc(RPC_PORT, {publicKey, mining: ENABLE_MINING}, 
+        const main = rpc(RPC_PORT, {pK, mining: ENABLE_MINING}, 
             _sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
         main()
     }
