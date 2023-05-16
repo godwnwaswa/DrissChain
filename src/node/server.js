@@ -80,8 +80,8 @@ const server = async (config, fastify) => {
         /**
          * The message handler
          * */
-        socket.on("message", async msg => {
-            const msg = parseJSON(msg)
+        socket.on("message", async _msg => {
+            const msg = parseJSON(_msg)
             switch (msg.type) {
                 case TYPE.NEW_BLOCK:
                     newBlock(
