@@ -12,14 +12,10 @@ const { indexTxns } = require("../utils/utils")
 const { default: fastify } = require('fastify')
 
 class Block {
-    constructor(
-        blockNumber = 1,
-        timestamp = Date.now(),
-        transactions = [],
-        difficulty = 1,
-        parentHash = "",
-        coinbase = ""
-    ) {
+    constructor(blockNumber = 1, timestamp = Date.now(),
+        transactions = [], difficulty = 1, parentHash = "",
+        coinbase = "" ) {
+
         Object.assign(this, {
             blockNumber,
             timestamp,
@@ -33,18 +29,12 @@ class Block {
         this.hash = Block.getHash(this)
     }
     /**
-     * Generates a hash of a block by concatenating various properties of the block and hashing 
-     * the resulting string using SHA256.
+     * Generates block hash by concatenating some properties of the block into a string and getting its SHA256 hash.
+     * @param b block object
      * */
-    static getHash(block) {
-        return SHA256(
-            block.blockNumber.toString() +
-            block.timestamp.toString() +
-            block.txRoot +
-            block.difficulty.toString() +
-            block.parentHash +
-            block.nonce.toString()
-        )
+    static getHash(b) {
+        const blockStr = `${b.blockNumber.toString()}${b.timestamp.toString()}${b.txRoot}${b.difficulty.toString()}${b.parentHash}${b.nonce.toString()}`
+        return SHA256(blockStr)
     }
     /**
      * Checks if a block has valid property types.
@@ -67,7 +57,7 @@ class Block {
             if (!valid) {
                 fastify.log.error(msg)
                 return false
-            } else {fastify.log.log(msg)}
+            } else {fastify.log.info(msg)}
         }
 
         // Get all existing addresses
