@@ -112,7 +112,7 @@ async function changeState(newBlock, stateDB, codeDB, enableLogging = false) { /
             const storageDB = new Level(__dirname + "/../log/accountStore/" + tx.recipient);
             const keys = Object.keys(newStorage);
 
-            newState[tx.recipient].storageRoot = buildMerkleTree(keys.map(key => key + " " + newStorage[key])).val;
+            newState[tx.recipient].storageRoot = genMTree(keys.map(key => key + " " + newStorage[key])).val;
 
             for (const key in newStorage) {
                 await storageDB.put(key, newStorage[key]);

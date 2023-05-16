@@ -1,7 +1,6 @@
 "use strict"
 
 const WS = require("ws")
-const EC = require("elliptic").ec, ec = new EC("secp256k1")
 const { Level } = require('level')
 const { fork } = require("child_process")
 
@@ -40,21 +39,8 @@ const blockDB = new Level(__dirname + "/../log/blockStore", { valueEncoding: "js
 const bhashDB = new Level(__dirname + "/../log/bhashStore")
 const codeDB = new Level(__dirname + "/../log/codeStore")
 
-const pino = require('pino')
-const logger = pino({
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            ignore: 'pid,hostname',
-        },
-    },
-})
-const fastify = require('fastify')({
-    logger: logger
-})
-
 /**
- * Isolated dependencies
+ * Isolated server dependencies
 */
 
 const connect = require("./server/connect")
@@ -74,7 +60,7 @@ const createTx = require("./types/create-tx")
 /**
  * Starts a Drisseum node at a specified WS address.
  * */
-const server = async config => {
+const server = async (config, fastify) => {
     const { 
         PORT = 3000, RPC_PORT = 5000, 
         PEERS = [], MAX_PEERS = 3, 

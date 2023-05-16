@@ -46,7 +46,7 @@ const verifyMerkleProof = (leaves, root) => {
  * Takes an array of data items, hashes each item using the SHA-256 hashing algorithm, 
  * and constructs a Merkle tree from the resulting hashes. It returns the root node of the tree.
  * */
-const buildMerkleTree = (items) => {
+const genMTree = (items) => {
     if (items.length === 0) return Node(SHA256("0"))
 
     let hashList = items.map(item => Node(SHA256(item)))
@@ -66,4 +66,4 @@ const buildMerkleTree = (items) => {
     return hashList[0]
 }
 
-module.exports = { getMerklePath, verifyMerkleProof, buildMerkleTree }
+module.exports = { getMerklePath, verifyMerkleProof, genMTree }

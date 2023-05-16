@@ -5,7 +5,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 const EC = require("elliptic").ec, ec = new EC("secp256k1")
 
 const Transaction = require("./transaction")
-const { buildMerkleTree } = require("./merkle")
+const { genMTree } = require("./merkle")
 const { BLOCK_REWARD, BLOCK_GAS_LIMIT, EMPTY_HASH } = require("../config.json")
 const drisscript = require("./runtime")
 const { indexTxns } = require("../utils/utils")
@@ -27,7 +27,7 @@ class Block {
             difficulty,
             parentHash,
             nonce: 0,
-            txRoot: buildMerkleTree(indexTxns(transactions)).val,
+            txRoot: genMTree(indexTxns(transactions)).val,
             coinbase,
         })
         this.hash = Block.getHash(this)
@@ -164,7 +164,7 @@ class Block {
         for (const address in storage) {
             const storageDB = new Level(__dirname + "/../log/accountStore/" + address)
             const keys = Object.keys(storage[address])
-            states[address].storageRoot = buildMerkleTree(keys.map(key => key + " " + storage[address][key])).val
+            states[address].storageRoot = genMTree(keys.map(key => key + " " + storage[address][key])).val
             for (const key of keys) {
                 await storageDB.put(key, storage[address][key])
             }

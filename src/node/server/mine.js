@@ -1,17 +1,20 @@
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 const Block = require("../../core/block")
-const { buildMerkleTree } = require("../../core/merkle")
+const { genMTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
 const { updateDifficulty } = require("../../consensus/consensus")
-const executeTx = require('./execute-tx')
+const execTx = require('./execute-tx')
 const { BLOCK_REWARD } = require("../../config.json")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { prodMsg, sendMsg } = require("../message")
 const TYPE = require("../message-types")
 const { Level } = require('level')
 
+/**
+ * Mines txns from the txPool
+*/
 const mine = async (
-    publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB,
+    pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB,
     blockDB, bhashDB, codeDB, chainInfo,
     worker, mined, opened, fastify, fork) => {
 
@@ -27,7 +30,7 @@ const mine = async (
         chainInfo.latestBlock.blockNumber + 1,
         Date.now(), [], chainInfo.difficulty,
         chainInfo.latestBlock.hash,
-        SHA256(publicKey))
+        SHA256(pK))
 
     // Collect a list of transactions to mine
     let txnsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
@@ -36,7 +39,7 @@ const mine = async (
     // fastify.log.info(`txpool: ${chainInfo.txPool}`)
     for (const tx of chainInfo.txPool) {
         if (tContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        const res = await executeTx(
+        const res = await execTx(
             tx, tContractGas, tTxGas,
             txnsToMine, stateDB, codeDB,
             states, code, skipped, storage, storedAddresses, fastify)
@@ -56,7 +59,7 @@ const mine = async (
 
     block.transactions = txnsToMine // Add transactions to block
     block.hash = Block.getHash(block) // Re-hash with new transactions
-    block.txRoot = buildMerkleTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
+    block.txRoot = genMTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
 
     // Mine the block.
     work(block, chainInfo.difficulty, worker)
@@ -83,7 +86,7 @@ const mine = async (
                 for (const address in storage) {
                     const storageDB = new Level(__dirname + "/../../log/accountStore/" + address)
                     const keys = Object.keys(storage[address])
-                    states[address].storageRoot = buildMerkleTree(keys.map(key => key + " " + storage[address][key])).val
+                    states[address].storageRoot = genMTree(keys.map(key => key + " " + storage[address][key])).val
                     for (const key of keys) {
                         await storageDB.put(key, storage[address][key])
                     }

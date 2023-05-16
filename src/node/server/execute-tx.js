@@ -3,7 +3,10 @@ const Transaction = require("../../core/transaction")
 const drisscript = require("../../core/runtime")
 const { EMPTY_HASH } = require("../../config.json")
 
-const executeTx = async (
+/**
+ * Executes a single tx in the txPool
+*/
+const execTx = async (
     tx, tContractGas, tTxGas,
     txnsToMine, stateDB, codeDB,
     states, code, skipped, storage, storedAddresses, fastify) => {
@@ -78,4 +81,4 @@ const executeTx = async (
     return res
 }
 
-module.exports = executeTx
+module.exports = execTx
