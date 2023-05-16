@@ -81,37 +81,37 @@ const server = async (config, fastify) => {
          * The message handler
          * */
         socket.on("message", async msg => {
-            const _msg = parseJSON(msg)
-            switch (_msg.type) {
+            const msg = parseJSON(msg)
+            switch (msg.type) {
                 case TYPE.NEW_BLOCK:
                     newBlock(
-                        _msg, chainInfo, currentSyncBlock, 
+                        msg, chainInfo, currentSyncBlock, 
                         stateDB, codeDB, blockDB, bhashDB, ENABLE_CHAIN_REQUEST, 
                         ENABLE_MINING, mined, opened, worker, fastify)
                     break
 
                 case TYPE.CREATE_TRANSACTION:
                     if (!ENABLE_CHAIN_REQUEST){
-                        createTx(_msg, stateDB, chainInfo, fastify)
+                        createTx(msg, stateDB, chainInfo, fastify)
                     }
                     break
 
                 case TYPE.REQUEST_BLOCK:
                     if (!ENABLE_CHAIN_REQUEST) {
-                        reqBlock(_msg, opened, blockDB, fastify)
+                        reqBlock(msg, opened, blockDB, fastify)
                     }
                     break
 
                 case TYPE.SEND_BLOCK:
                     sendBlock(
-                        _msg, currentSyncBlock, chainInfo, 
+                        msg, currentSyncBlock, chainInfo, 
                         stateDB, codeDB, blockDB, bhashDB, 
                         opened, MY_ADDRESS, ENABLE_CHAIN_REQUEST, fastify)
                     break
 
                 case TYPE.HANDSHAKE:
                     handshake(
-                        _msg, MAX_PEERS, MY_ADDRESS, connected, opened, 
+                        msg, MAX_PEERS, MY_ADDRESS, connected, opened, 
                         connectedNodes, fastify)
             }
         })
@@ -130,6 +130,7 @@ const server = async (config, fastify) => {
     }
 
     PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes, fastify))
+
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
         chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify)
