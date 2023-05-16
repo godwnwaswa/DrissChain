@@ -1,17 +1,16 @@
 /**
- * --------------------------------------------------------------------------------------
+ * 
  * A Merkle tree is a binary tree where each leaf node is a hash of a data item, and each 
  * non-leaf node is a hash of its two child nodes. This structure is commonly used in 
  * cryptographic applications such as digital signatures and blockchain technology, where 
  * it provides a way to efficiently prove the integrity of a piece of data without 
  * revealing the data itself.
- * --------------------------------------------------------------------------------------
  * 
  * */
 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex")
 
-function Node(val, left = null, right = null) {
+const Node = (val, left = null, right = null) => {
     return { val, left, right }
 }
 
@@ -43,10 +42,12 @@ const verifyMerkleProof = (leaves, root) => {
 }
 
 /**
- * Takes an array of data items, hashes each item using the SHA-256 hashing algorithm, 
- * and constructs a Merkle tree from the resulting hashes. It returns the root node of the tree.
+ * Hashes each item in an array using the SHA-256 hashing algorithm, and constructs a Merkle tree 
+ * from the resulting hashes. 
+ * 
+ * @return The root node of the tree.
  * */
-const genMTree = (items) => {
+const genMTree = items => {
     if (items.length === 0) return Node(SHA256("0"))
 
     let hashList = items.map(item => Node(SHA256(item)))
