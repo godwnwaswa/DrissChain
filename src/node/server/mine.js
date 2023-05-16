@@ -8,10 +8,11 @@ const { BLOCK_REWARD } = require("../../config.json")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { produceMsg, sendMsg } = require("../message")
 const TYPE = require("../message-types")
+const { Level } = require('level')
 
 const mine = async (
-    publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, 
-    blockDB, bhashDB, codeDB, chainInfo, 
+    publicKey, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB,
+    blockDB, bhashDB, codeDB, chainInfo,
     worker, mined, opened, fastify, fork) => {
 
     const work = (block, difficulty, worker) => {
@@ -23,22 +24,37 @@ const mine = async (
 
     // Create a new block.
     const block = new Block(
-        chainInfo.latestBlock.blockNumber + 1, 
-        Date.now(), [],chainInfo.difficulty, 
-        chainInfo.latestBlock.hash, 
+        chainInfo.latestBlock.blockNumber + 1,
+        Date.now(), [], chainInfo.difficulty,
+        chainInfo.latestBlock.hash,
         SHA256(publicKey))
 
     // Collect a list of transactions to mine
-    const transactionsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
-
-    let totalContractGas = 0n, totalTxGas = 0n
+    let txnsToMine = [], states = {}, code = {}, storage = {}, skipped = {}
+    let tContractGas = 0n, tTxGas = 0n
     const storedAddresses = await stateDB.keys().all()
+    // fastify.log.info(`txpool: ${chainInfo.txPool}`)
     for (const tx of chainInfo.txPool) {
-        if (totalContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
-        executeTx(tx, totalContractGas, transactionsToMine, stateDB, codeDB, states, code, skipped, storedAddresses, fastify)
+        if (tContractGas + BigInt(tx.additionalData.contractGas || 0) >= BigInt(BLOCK_GAS_LIMIT)) break
+        const res = await executeTx(
+            tx, tContractGas, tTxGas,
+            txnsToMine, stateDB, codeDB,
+            states, code, skipped, storage, storedAddresses, fastify)
+        //update inputs 
+        // fastify.log.info(res)
+        tContractGas = res.tContractGas
+        tTxGas = res.tTxGas
+        txnsToMine = res.txnsToMine
+        states = res.states
+        code = res.code
+        storage = res.storage
+        skipped = res.skipped
+
     }
 
-    block.transactions = transactionsToMine // Add transactions to block
+
+
+    block.transactions = txnsToMine // Add transactions to block
     block.hash = Block.getHash(block) // Re-hash with new transactions
     block.txRoot = buildMerkleTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
 

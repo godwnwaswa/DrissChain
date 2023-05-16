@@ -3,62 +3,79 @@ const Transaction = require("../../core/transaction")
 const drisscript = require("../../core/runtime")
 const { EMPTY_HASH } = require("../../config.json")
 
-const executeTx = async (tx, totalContractGas, totalTxGas, transactionsToMine, stateDB, codeDB, states, code, skipped, storedAddresses, fastify) => {
+const executeTx = async (
+    tx, tContractGas, tTxGas,
+    txnsToMine, stateDB, codeDB,
+    states, code, skipped, storage, storedAddresses, fastify) => {
     const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
     if (skipped[txSenderAddress]) return // Check if transaction is from an ignored address.
+    const res = {
+        tContractGas: tContractGas,
+        tTxGas: tTxGas,
+        states: states,
+        code: code,
+        txnsToMine: txnsToMine,
+        storage: storage,
+        skipped: skipped
+    }
+
     // Normal coin transfers
-    if (!states[txSenderAddress]) {
+    if (!res.states[txSenderAddress]) {
+        fastify.log.info('Processsing a normal coin transfer.')
         const senderState = await stateDB.get(txSenderAddress)
-        states[txSenderAddress] = senderState
-        code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
+        res.states[txSenderAddress] = senderState
+        res.code[senderState.codeHash] = await codeDB.get(senderState.codeHash)
         if (senderState.codeHash !== EMPTY_HASH) {
-            skipped[txSenderAddress] = true
-            return
+            res.skipped[txSenderAddress] = true
+            return res
         }
-        states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
+        res.states[txSenderAddress].balance = (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
     } else {
-        if (states[txSenderAddress].codeHash !== EMPTY_HASH) {
-            skipped[txSenderAddress] = true
-            return
+        if (res.states[txSenderAddress].codeHash !== EMPTY_HASH) {
+            res.skipped[txSenderAddress] = true
+            return res
         }
-        states[txSenderAddress].balance = (BigInt(states[txSenderAddress].balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
+        res.states[txSenderAddress].balance = (BigInt(res.states[txSenderAddress].balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt(tx.additionalData.contractGas || 0)).toString()
     }
-    if (!storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
-        states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
-        code[EMPTY_HASH] = ""
+    if (!storedAddresses.includes(tx.recipient) && !res.states[tx.recipient]) {
+        res.states[tx.recipient] = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH }
+        res.code[EMPTY_HASH] = ""
     }
-    if (storedAddresses.includes(tx.recipient) && !states[tx.recipient]) {
-        states[tx.recipient] = await stateDB.get(tx.recipient)
-        code[states[tx.recipient].codeHash] = await codeDB.get(states[tx.recipient].codeHash)
+    if (storedAddresses.includes(tx.recipient) && !res.states[tx.recipient]) {
+        res.states[tx.recipient] = await stateDB.get(tx.recipient)
+        res.code[res.states[tx.recipient].codeHash] = await codeDB.get(res.states[tx.recipient].codeHash)
     }
-    states[tx.recipient].balance = (BigInt(states[tx.recipient].balance) + BigInt(tx.amount)).toString()
+    res.states[tx.recipient].balance = (BigInt(res.states[tx.recipient].balance) + BigInt(tx.amount)).toString()
     // Contract deployment
-    if (states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string") {
-        states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
-        code[states[txSenderAddress].codeHash] = tx.additionalData.scBody
+    if (res.states[txSenderAddress].codeHash === EMPTY_HASH && typeof tx.additionalData.scBody === "string") {
+        res.states[txSenderAddress].codeHash = SHA256(tx.additionalData.scBody)
+        res.code[res.states[txSenderAddress].codeHash] = tx.additionalData.scBody
     }
     // Update nonce
-    states[txSenderAddress].nonce += 1
+    res.states[txSenderAddress].nonce += 1
     // Decide to drop or add transaction to block
-    if (BigInt(states[txSenderAddress].balance) < 0n) {
-        skipped[txSenderAddress] = true
-        return
+    if (BigInt(res.states[txSenderAddress].balance) < 0n) {
+        res.skipped[txSenderAddress] = true
+        return res
     } else {
-        transactionsToMine.push(tx)
-        totalContractGas += BigInt(tx.additionalData.contractGas || 0)
-        totalTxGas += BigInt(tx.gas) + BigInt(tx.additionalData.contractGas || 0)
+        res.txnsToMine.push(tx)
+        res.tContractGas += BigInt(tx.additionalData.contractGas || 0)
+        tTxGas += BigInt(tx.gas) + BigInt(tx.additionalData.contractGas || 0)
     }
 
     // Contract execution
-    if (states[tx.recipient].codeHash !== EMPTY_HASH) {
+    if (res.states[tx.recipient].codeHash !== EMPTY_HASH) {
         const contractInfo = { address: tx.recipient }
-        const [newState, newStorage] = await drisscript(code[states[tx.recipient].codeHash], states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
+        const [newState, newStorage] = await drisscript(res.code[res.states[tx.recipient].codeHash], res.states, BigInt(tx.additionalData.contractGas || 0), stateDB, block, tx, contractInfo, false)
         for (const account of Object.keys(newState)) {
-            states[account] = newState[account]
-            storage[tx.recipient] = newStorage
+            res.states[account] = newState[account]
+            res.storage[tx.recipient] = newStorage
         }
+        
     }
+
+    return res
 }
 
 module.exports = executeTx
