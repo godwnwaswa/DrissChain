@@ -6,7 +6,7 @@ const { updateDifficulty } = require("../../consensus/consensus")
 const executeTx = require('./execute-tx')
 const { BLOCK_REWARD } = require("../../config.json")
 const { clearDepreciatedTxns } = require("../../core/txPool")
-const { produceMsg, sendMsg } = require("../message")
+const { prodMsg, sendMsg } = require("../message")
 const TYPE = require("../message-types")
 const { Level } = require('level')
 
@@ -96,7 +96,7 @@ const mine = async (
                 }
                 // Update the new transaction pool (remove all the transactions that are no longer valid).
                 chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
-                sendMsg(produceMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
+                sendMsg(prodMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
                 fastify.log.info(`NEW_BLOCK* mined. Synced at height #${chainInfo.latestBlock.blockNumber}, chain state transited.`)
             } else {
                 mined = false

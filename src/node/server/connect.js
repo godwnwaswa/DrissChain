@@ -1,5 +1,5 @@
 const WS = require("ws")
-const { produceMsg } = require("../message")
+const { prodMsg } = require("../message")
 const TYPE = require("../message-types")
 /**
  * Connects to a WS server at the specified address.
@@ -14,8 +14,8 @@ const connect = (MY_ADDRESS, address, connected, opened, connectedNodes, fastify
          * Open a connection to the socket and send a handshake message to all connected nodes.
          * */
         socket.on("open", async () => {
-            for (const _address of [MY_ADDRESS, ...connected]) socket.send(produceMsg(TYPE.HANDSHAKE, _address))
-            for (const node of opened) node.socket.send(produceMsg(TYPE.HANDSHAKE, address))
+            for (const _address of [MY_ADDRESS, ...connected]) socket.send(prodMsg(TYPE.HANDSHAKE, _address))
+            for (const node of opened) node.socket.send(prodMsg(TYPE.HANDSHAKE, address))
 
             if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) {
                 opened.push({ socket, address })

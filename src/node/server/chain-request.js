@@ -3,7 +3,7 @@ const {
     INITIAL_SUPPLY, 
     FIRST_ACCOUNT } = require("../../config.json")
 
-const { produceMsg } = require("../message")
+const { prodMsg } = require("../message")
 const TYPE = require("../message-types")
 
 const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify) => {
@@ -21,7 +21,7 @@ const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRE
     }
     setTimeout(async () => {
         for (const node of opened) {
-            node.socket.send(produceMsg(TYPE.REQUEST_BLOCK, { 
+            node.socket.send(prodMsg(TYPE.REQUEST_BLOCK, { 
                 blockNumber: currentSyncBlock, 
                 requestAddress: MY_ADDRESS 
             }))

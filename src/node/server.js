@@ -65,7 +65,7 @@ const wallet = require("./server/wallet")
 
 //message type cases
 const newBlock = require("./types/new-block")
-const requestBlock = require("./types/req-block")
+const reqBlock = require("./types/req-block")
 const handshake = require("./types/handshake")
 const sendBlock = require("./types/send-block")
 const createTx = require("./types/create-tx")
@@ -113,7 +113,7 @@ const server = async config => {
 
                 case TYPE.REQUEST_BLOCK:
                     if (!ENABLE_CHAIN_REQUEST) {
-                        requestBlock(_msg, opened, blockDB, fastify)
+                        reqBlock(_msg, opened, blockDB, fastify)
                     }
                     break
 

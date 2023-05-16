@@ -1,4 +1,4 @@
-const { produceMsg } = require("../message")
+const { prodMsg } = require("../message")
 const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const changeState = require("../../core/state")
 const TYPE = require("../message-types")
@@ -24,7 +24,7 @@ const sendBlock = async (
             fastify.log.info(`Synced at height #${block.blockNumber}, chain state transited.`)
 
             for (const node of opened) {
-                node.socket.send(produceMsg(TYPE.REQUEST_BLOCK,{ blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }))
+                node.socket.send(prodMsg(TYPE.REQUEST_BLOCK,{ blockNumber: currentSyncBlock, requestAddress: MY_ADDRESS }))
                 await new Promise(r => setTimeout(r, 5000))
             }
         }
