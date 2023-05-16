@@ -87,7 +87,7 @@ const server = async (config, fastify) => {
                     newBlock(
                         _msg, chainInfo, currentSyncBlock, 
                         stateDB, codeDB, blockDB, bhashDB, ENABLE_CHAIN_REQUEST, 
-                        ENABLE_MINING, mined, worker, fastify)
+                        ENABLE_MINING, mined, opened, worker, fastify)
                     break
 
                 case TYPE.CREATE_TRANSACTION:
