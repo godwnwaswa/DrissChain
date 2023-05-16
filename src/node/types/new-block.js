@@ -3,9 +3,10 @@ const { clearDepreciatedTxns } = require("../../core/txPool")
 const { sendMsg } = require("../message")
 
 const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, 
-    codeDB, blockDB, bhashDB,ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
+    codeDB, blockDB, bhashDB, ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
         
     const nB = msg.data
+    const res = { opened, currentSyncBlock, mined, opened }
     if (!chainInfo.checkedBlock[nB.hash]) { chainInfo.checkedBlock[nB.hash] = true }
     else { return }
     if (!ENABLE_MINING){ fastify.log.info("NEW_BLOCK* from peer. Verifying...") }
@@ -27,13 +28,14 @@ const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB,
             chainInfo.latestBlock = nB
             chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
             fastify.log.info(`Synced at height #${nB.blockNumber}, chain state transited.`)
-            sendMsg(message, opened)
+            sendMsg(msg, opened)
             // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
             // {
             //     ENABLE_CHAIN_REQUEST = false
             // }
         }
     }
+    return res
     
 }
 
