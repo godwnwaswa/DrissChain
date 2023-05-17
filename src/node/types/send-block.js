@@ -10,7 +10,7 @@ const sendBlock = async (msg, currentSyncBlock, chainInfo, stateDB, codeDB, bloc
     if (ENABLE_CHAIN_REQUEST && currentSyncBlock === B.blockNumber) {
 
         fastify.log.info("REQUEST_BLOCK* from peer. Verifying...")
-        if (chainInfo.latestSyncBlock === null || await verifyBlock(B, chainInfo, stateDB, codeDB, ENABLE_LOGGING)) {
+        if (chainInfo.latestSyncBlock === null || await verifyBlock(B, chainInfo, stateDB, codeDB)) {
             fastify.log.info("Block verified. Syncing to the chain...")
             currentSyncBlock += 1
             await blockDB.put(B.blockNumber.toString(), B)

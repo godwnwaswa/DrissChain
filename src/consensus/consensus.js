@@ -27,8 +27,7 @@ const verifyBlock = async (nB, chainInfo, stateDB, codeDB ) => {
 }
 
 const updateDifficulty = async (nB, chainInfo, blockDB) => {
-    if (nB.blockNumber % 10 === 0) 
-    {
+    if (nB.blockNumber % 10 === 0) {
         const oldBlock = await blockDB.get((nB.blockNumber - 9).toString());
         chainInfo.difficulty = Math.ceil(chainInfo.difficulty *  10* BLOCK_TIME / (nB.timestamp - oldBlock.timestamp));
     }
