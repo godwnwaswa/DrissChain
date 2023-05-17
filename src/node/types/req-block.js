@@ -10,8 +10,6 @@ const reqBlock = async (msg, opened, blockDB, fastify) => {
         socket.send(prodMsg(TYPE.SEND_BLOCK, block))
         fastify.log.info(`SEND_BLOCK* at height #${blockNumber} to ${requestAddress}.`)
     }
-
-
 }
 
 module.exports = reqBlock
