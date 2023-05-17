@@ -33,18 +33,16 @@ const loopMine = require("./server/loop-mine")
 const wallet = require("./server/wallet")
 const miningNode = require("./server/mining-node")
 
-/**
- * Message type cases
- * */
+
+// Message type cases 
 const newBlock = require("./types/new-block")
 const reqBlock = require("./types/req-block")
 const handshake = require("./types/handshake")
 const sendBlock = require("./types/send-block")
 const createTx = require("./types/create-tx")
 
-/**
- * Starts a Drisseum node at a specified WS address.
- * */
+// Starts a Drisseum node at a specified WS address.
+
 const server = async (config, fastify) => {
     const { 
         PORT = 3000, RPC_PORT = 5000, 
