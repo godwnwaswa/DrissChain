@@ -1,6 +1,7 @@
 const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { sendMsg } = require("../message")
+const { fork } = require("child_process")
 
 const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB, 
     ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
@@ -19,8 +20,8 @@ const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, codeDB, block
             fastify.log.info("Block verified. Syncing to the chain...")
             if (ENABLE_MINING) {
                 res.mined = true //check their chain length & sync if > your chain else mine
-                // worker.kill()
-                // worker = fork(`${__dirname}/../../miner/worker.js`)
+                worker.kill()
+                worker = fork(`${__dirname}/../../miner/worker.js`)
             }
             await updateDifficulty(nB, chainInfo, blockDB)
             await blockDB.put(nB.blockNumber.toString(), nB)
@@ -29,10 +30,10 @@ const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, codeDB, block
             chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
             fastify.log.info(`Synced at height #${nB.blockNumber}, chain state transited.`)
             sendMsg(msg, res.opened)
-            // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
-            // {
-            //     ENABLE_CHAIN_REQUEST = false
-            // }
+            if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
+            {
+                ENABLE_CHAIN_REQUEST = false
+            }
         }
     }
     return res
