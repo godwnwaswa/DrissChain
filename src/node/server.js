@@ -60,10 +60,11 @@ const server = async (config, fastify) => {
     await codeDB.put(EMPTY_HASH, "")
     const server = new WS.Server({ port: PORT })
     fastify.log.info(`WS server started on PORT ${PORT.toString()}`)
+    let res = null
     server.on("connection", async (socket, req) => {
         socket.on("message", async _msg => {
             const msg = parseJSON(_msg)
-            let res = null
+            
             switch (msg.type) {
                 case TYPE.NEW_BLOCK:
                     res = await newBlock( msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB, 
@@ -106,12 +107,16 @@ const server = async (config, fastify) => {
 
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
-        chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify)
+        res = await chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify)
+        opened = res.opened
+        currentSyncBlock = res.currentSyncBlock
     }
 
     if (ENABLE_MINING) {
-        loopMine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, 
+        res = loopMine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, 
             worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify, fork)
+        mined = res.mined
+        opened = res.opened
     }
 
     if (ENABLE_RPC){

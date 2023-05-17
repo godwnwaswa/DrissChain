@@ -8,8 +8,9 @@ const { Level } = require('level')
 /**
  * @param B block
 */
-const work = async (B, chainInfo, blockDB, bhashDB, stateDB, 
-  codeDB, storedAddresses, states, code, storage, opened, EMPTY_HASH, fastify) => {
+const work = async (B, chainInfo, blockDB, bhashDB, stateDB, codeDB, storedAddresses, states, code, storage, opened,
+  EMPTY_HASH, fastify) => {
+  const _res = { opened }
   await updateDifficulty(B, chainInfo, blockDB) // Update difficulty
   await blockDB.put(B.blockNumber.toString(), B) // Add block to chain
   await bhashDB.put(B.hash, B.blockNumber.toString()) // Assign block number to the matching block hash
@@ -43,8 +44,9 @@ const work = async (B, chainInfo, blockDB, bhashDB, stateDB,
   }
   // Update the new transaction pool (remove all the transactions that are no longer valid).
   chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
-  sendMsg(prodMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), opened) // Broadcast the new block
+  sendMsg(prodMsg(TYPE.NEW_BLOCK, chainInfo.latestBlock), _res.opened) // Broadcast the new block
   fastify.log.info(`NEW_BLOCK* mined. Synced at height #${chainInfo.latestBlock.blockNumber}, chain state transited.`)
+  return _res
 }
 
 

@@ -8,11 +8,10 @@ const work = require('./work')
 /**
  * Mines txns from the txPool
 */
-const mine = async (
-    pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB,
-    blockDB, bhashDB, codeDB, chainInfo,
+const mine = async ( pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo,
     worker, mined, opened, fastify, fork) => {
 
+    const _res = { mined, opened }
     const _work = (block, difficulty, worker) => {
         return new Promise((resolve, reject) => {
             worker.addListener("message", message => resolve(message.result))
@@ -53,17 +52,18 @@ const mine = async (
     _work(block, chainInfo.difficulty, worker)
         .then(async B => {
             // If the block is not mined before, we will add it to our chain and broadcast this new block.
-            if (!mined) {
-                work(B, chainInfo, blockDB, bhashDB, stateDB, 
-                    codeDB, storedAddresses, states, code, storage, opened, EMPTY_HASH, fastify)
-                return
+            if (!_res.mined) {
+                const __res = await work(B, chainInfo, blockDB, bhashDB, stateDB, 
+                    codeDB, storedAddresses, states, code, storage, _res.opened, EMPTY_HASH, fastify)
+                return _res // to-do >> build a detailed res object
             }
-            mined = false
+            _res.mined = false
             // Re-create the worker thread
             // worker.kill()
             // worker = fork(`${__dirname}/../../miner/worker.js`)
         })
         .catch(err => fastify.log.error(err))
+    return _res
 }
 
 module.exports = mine

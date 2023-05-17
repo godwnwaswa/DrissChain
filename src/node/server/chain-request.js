@@ -7,11 +7,12 @@ const { prodMsg } = require("../message")
 const TYPE = require("../message-types")
 
 const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify) => {
+    const res = { opened, currentSyncBlock }
     const blockNumbers = await blockDB.keys().all()
     if (blockNumbers.length !== 0) {
-        currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
+        res.currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
     }
-    if (currentSyncBlock === 1) {
+    if (res.currentSyncBlock === 1) {
         await stateDB.put(FIRST_ACCOUNT, { 
             balance: INITIAL_SUPPLY, 
             codeHash: EMPTY_HASH, 
@@ -20,15 +21,16 @@ const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRE
         })
     }
     setTimeout(async () => {
-        for (const node of opened) {
+        for (const node of res.opened) {
             node.socket.send(prodMsg(TYPE.REQUEST_BLOCK, { 
-                blockNumber: currentSyncBlock, 
+                blockNumber: res.currentSyncBlock, 
                 requestAddress: MY_ADDRESS 
             }))
             await new Promise(r => setTimeout(r, 5000))
         }
     }, 5000)
 
+    return res
 }
 
 
