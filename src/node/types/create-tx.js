@@ -27,7 +27,7 @@ const createTx = async (_msg, stateDB, chainInfo, fastify) => {
     fastify.log.info("New tx received, broadcasted and added to pool.")
     chainInfo.txPool.push(tx)
     sendMsg(message, opened)
-    
+    return { chainInfo }
 }
 
 module.exports = createTx

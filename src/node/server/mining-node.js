@@ -11,6 +11,8 @@ const miningNode = async (blockDB, stateDB, bhashDB, codeDB, chainInfo) => {
     chainInfo.latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())
     chainInfo.difficulty = chainInfo.latestBlock.difficulty
   }
+
+  return { chainInfo }
 }
 
 

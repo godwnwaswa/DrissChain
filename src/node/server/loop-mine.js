@@ -5,7 +5,6 @@ const mine = require('./mine')
 */
 const loopMine = (pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, mined, opened, 
     ENABLE_CHAIN_REQUEST, fastify) => {
-    const res = { mined, opened}
     let length = chainInfo.latestBlock.blockNumber
     let mining = true
     setInterval(async () => { 
@@ -13,13 +12,13 @@ const loopMine = (pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, co
             mining = false
             length = chainInfo.latestBlock.blockNumber
             if (!ENABLE_CHAIN_REQUEST){
-                const _res = await mine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, 
-                    res.mined, res.opened, fastify)
+                await mine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, 
+                    mined, opened, fastify)
             }
         }
     }, BLOCK_TIME)
 
-    return res
+    return { mined, opened }
 }
 
 module.exports = loopMine

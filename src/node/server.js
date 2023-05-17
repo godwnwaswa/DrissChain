@@ -11,7 +11,7 @@ const { parseJSON } = require("../utils/utils")
 let { opened , conn, connNodes, mined } = require("../config.json")
 let worker = fork(`${__dirname}/../miner/worker.js`) // Worker thread (for PoW mining).
 // Some chain info cache
-const chainInfo = {
+let chainInfo = {
     txPool: [],
     latestBlock: genesisBlock(),
     latestSyncBlock: null,
@@ -70,6 +70,7 @@ const server = async (config, fastify) => {
                     opened = res.opened
                     currentSyncBlock = res.currentSyncBlock
                     mined = res.mined
+                    chainInfo = res.chainInfo
                     break
                 case TYPE.CREATE_TRANSACTION:
                     if (!ENABLE_CHAIN_REQUEST){
@@ -98,7 +99,8 @@ const server = async (config, fastify) => {
     })
 
     if (!ENABLE_CHAIN_REQUEST) {
-        await miningNode(blockDB, stateDB, bhashDB, codeDB, chainInfo)
+        res = await miningNode(blockDB, stateDB, bhashDB, codeDB, chainInfo)
+        chainInfo = res.chainInfo
     }
 
     PEERS.forEach(peer => {
@@ -106,6 +108,7 @@ const server = async (config, fastify) => {
        conn = res.conn
        opened = res.opened
        connNodes = res.connNodes
+       chainInfo = res.chainInfo
     })
 
     let currentSyncBlock = 1
