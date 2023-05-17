@@ -2,9 +2,9 @@ const drisscript = require("./../runtime")
 const { genMTree } = require("./../merkle")
 const { Level } = require('level')
 
-const exeContract = async (tx, nB, stateDB, codeDB, senderState) => {
+const exeContract = async (tx, nB, stateDB, codeDB, recipientState) => {
     const contractInfo = { address: tx.recipient }
-    const [ newState, newStorage ] = await drisscript(await codeDB.get(senderState.codeHash), {}, 
+    const [ newState, newStorage ] = await drisscript(await codeDB.get(recipientState.codeHash), {}, 
     BigInt(tx.additionalData.contractGas || 0), stateDB, nB, tx, contractInfo)
 
     const storageDB = new Level(__dirname + "/../log/accountStore/" + tx.recipient)

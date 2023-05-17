@@ -34,7 +34,7 @@ const changeState = async (nB, stateDB, codeDB) => {
         }
         // Normal transfer
         const senderState = await stateDB.get(txSenderAddress)
-        const dataFromRecipient = await stateDB.get(tx.recipient)
+        const recipientState = await stateDB.get(tx.recipient)
         await stateDB.put(txSenderAddress, {
             balance: (BigInt(senderState.balance) - BigInt(tx.amount) - BigInt(tx.gas) - BigInt((tx.additionalData.contractGas || 0))).toString(),
             codeHash: senderState.codeHash,
@@ -42,14 +42,14 @@ const changeState = async (nB, stateDB, codeDB) => {
             storageRoot: senderState.storageRoot
         })
         await stateDB.put(tx.recipient, {
-            balance: (BigInt(dataFromRecipient.balance) + BigInt(tx.amount)).toString(),
-            codeHash: dataFromRecipient.codeHash,
-            nonce: dataFromRecipient.nonce,
-            storageRoot: dataFromRecipient.storageRoot
+            balance: (BigInt(recipientState.balance) + BigInt(tx.amount)).toString(),
+            codeHash: recipientState.codeHash,
+            nonce: recipientState.nonce,
+            storageRoot: recipientState.storageRoot
         })
         // Contract execution
-        if (dataFromRecipient.codeHash !== EMPTY_HASH) {
-            await exeContract(tx, nB, stateDB, codeDB, dataFromRecipient)
+        if (recipientState.codeHash !== EMPTY_HASH) {
+            await exeContract(tx, nB, stateDB, codeDB, recipientState)
         }
     }
 
