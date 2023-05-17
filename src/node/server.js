@@ -103,7 +103,12 @@ const server = async (config, fastify) => {
         await miningNode(blockDB, stateDB, bhashDB, codeDB, chainInfo)
     }
 
-    PEERS.forEach(peer => connect(MY_ADDRESS, peer, conn, opened, connNodes, fastify))
+    PEERS.forEach(peer => {
+       res = connect(MY_ADDRESS, peer, conn, opened, connNodes, fastify)
+       conn = res.conn
+       opened = res.opened
+       connNodes = res.connNodes
+    })
 
     let currentSyncBlock = 1
     if (ENABLE_CHAIN_REQUEST) {
