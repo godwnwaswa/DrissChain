@@ -3,7 +3,6 @@
 const WS = require("ws")
 const { Level } = require('level')
 const { fork } = require("child_process")
-const changeState = require("../core/state")
 const { BLOCK_GAS_LIMIT, EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT } = require("../config.json")
 const genesisBlock = require("../core/genesis")
 const rpc = require("../rpc/rpc")
@@ -35,6 +34,7 @@ const sendTx = require("./server/send-tx")
 const chainRequest = require("./server/chain-request")
 const loopMine = require("./server/loop-mine")
 const wallet = require("./server/wallet")
+const miningNode = require("./server/mining-node")
 
 /**
  * Message type cases
@@ -58,7 +58,6 @@ const server = async (config, fastify) => {
         ENABLE_CHAIN_REQUEST = false 
     } = config
 
-    
     const { pK , keyPair } = wallet(PRIVATE_KEY)
     process.on("uncaughtException", err => fastify.log.error(err))
     await codeDB.put(EMPTY_HASH, "")
@@ -93,15 +92,7 @@ const server = async (config, fastify) => {
     })
 
     if (!ENABLE_CHAIN_REQUEST) {
-        if ((await blockDB.keys().all()).length === 0) {
-            await stateDB.put(FIRST_ACCOUNT, { balance: INITIAL_SUPPLY, codeHash: EMPTY_HASH, nonce: 0, storageRoot: EMPTY_HASH })
-            await blockDB.put(chainInfo.latestBlock.blockNumber.toString(), chainInfo.latestBlock)
-            await bhashDB.put(chainInfo.latestBlock.hash, chainInfo.latestBlock.blockNumber.toString())
-            await changeState(chainInfo.latestBlock, stateDB, codeDB)
-        } else {
-            chainInfo.latestBlock = await blockDB.get(Math.max(...(await blockDB.keys().all()).map(key => parseInt(key))).toString())
-            chainInfo.difficulty = chainInfo.latestBlock.difficulty
-        }
+        await miningNode(blockDB, stateDB, bhashDB, codeDB, chainInfo)
     }
 
     PEERS.forEach(peer => connect(MY_ADDRESS, peer, connected, opened, connectedNodes, fastify))
