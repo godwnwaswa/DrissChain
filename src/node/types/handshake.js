@@ -1,9 +1,9 @@
 const connect = require('../server/connect')
 
-const handshake = (msg, MAX_PEERS, MY_ADDRESS, connected, opened, connectedNodes, fastify) => {
+const handshake = (msg, MAX_PEERS, MY_ADDRESS, conn, opened, connNodes, fastify) => {
     const address = msg.data
-    if (connectedNodes <= MAX_PEERS) {
-        return connect(MY_ADDRESS, address, connected, opened, connectedNodes, fastify)
+    if (connNodes <= MAX_PEERS) {
+        return connect(MY_ADDRESS, address, conn, opened, connNodes, fastify)
     }
 
 }

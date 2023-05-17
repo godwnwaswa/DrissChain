@@ -2,23 +2,23 @@ const { verifyBlock, updateDifficulty } = require("../../consensus/consensus")
 const { clearDepreciatedTxns } = require("../../core/txPool")
 const { sendMsg } = require("../message")
 
-const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, 
-    codeDB, blockDB, bhashDB, ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
+const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB, 
+    ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
         
     const nB = msg.data
-    const res = { opened, currentSyncBlock, mined, opened }
+    const res = { opened, currentSyncBlock, mined }
     if (!chainInfo.checkedBlock[nB.hash]) { chainInfo.checkedBlock[nB.hash] = true }
     else { return }
     if (!ENABLE_MINING){ fastify.log.info("NEW_BLOCK* from peer. Verifying...") }
 
     if (nB.parentHash !== chainInfo.latestBlock.parentHash && 
-        (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && currentSyncBlock > 1))) {
+        (!ENABLE_CHAIN_REQUEST || (ENABLE_CHAIN_REQUEST && res.currentSyncBlock > 1))) {
 
         chainInfo.checkedBlock[nB.hash] = true
         if (await verifyBlock(nB, chainInfo, stateDB, codeDB)) {
             fastify.log.info("Block verified. Syncing to the chain...")
             if (ENABLE_MINING) {
-                mined = true //check their chain length & sync if > your chain else mine
+                res.mined = true //check their chain length & sync if > your chain else mine
                 // worker.kill()
                 // worker = fork(`${__dirname}/../../miner/worker.js`)
             }
@@ -28,7 +28,7 @@ const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB,
             chainInfo.latestBlock = nB
             chainInfo.txPool = await clearDepreciatedTxns(chainInfo, stateDB)
             fastify.log.info(`Synced at height #${nB.blockNumber}, chain state transited.`)
-            sendMsg(msg, opened)
+            sendMsg(msg, res.opened)
             // if (ENABLE_CHAIN_REQUEST) //they perhaps just sent the latest block
             // {
             //     ENABLE_CHAIN_REQUEST = false
