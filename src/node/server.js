@@ -117,7 +117,7 @@ const server = async (config, fastify) => {
 
     if (ENABLE_MINING) {
         res = loopMine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, 
-            worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify, fork)
+            worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify)
         mined = res.mined
         opened = res.opened
     }

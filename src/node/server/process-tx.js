@@ -10,13 +10,13 @@ const DEFAULT_STATE_OBJECT = { balance: "0", codeHash: EMPTY_HASH, nonce: 0, sto
  * @param tx transaction
  * @param txnsToMine transactions to mine
 */
-const processTx = async (
-    tx, tContractGas, tTxGas,
-    txnsToMine, stateDB, codeDB,
+const processTx = async ( tx, tContractGas, tTxGas, txnsToMine, stateDB, codeDB,
     states, code, skipped, storage, storedAddresses, fastify) => {
+
     const txSenderPubkey = Transaction.getPubKey(tx)
     const txSenderAddress = SHA256(txSenderPubkey)
     if (skipped[txSenderAddress]) return // Check if transaction is from an ignored address.
+    
     const res = {
         tContractGas: tContractGas,
         tTxGas: tTxGas,

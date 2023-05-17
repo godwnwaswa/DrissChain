@@ -4,12 +4,13 @@ const { genMTree } = require("../../core/merkle")
 const { indexTxns } = require("../../utils/utils")
 const processTx = require('./process-tx')
 const work = require('./work')
+const { fork } = require("child_process")
 
 /**
  * Mines txns from the txPool
 */
-const mine = async ( pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo,
-    worker, mined, opened, fastify, fork) => {
+const mine = async ( pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, worker, 
+    mined, opened, fastify) => {
 
     const _res = { mined, opened }
     const _work = (block, difficulty, worker) => {
@@ -40,12 +41,13 @@ const mine = async ( pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB,
         storage = res.storage
         skipped = res.skipped
 
-    }// Create a new block.
+    }
+    // Create a new block.
     const block = new Block(chainInfo.latestBlock.blockNumber + 1,  Date.now(), [],
     chainInfo.difficulty, chainInfo.latestBlock.hash, SHA256(pK))
 
-    block.transactions = txnsToMine // Add transactions to block
-    block.hash = Block.getHash(block) // Re-hash with new transactions
+    block.transactions = txnsToMine 
+    block.hash = Block.getHash(block) 
     block.txRoot = genMTree(indexTxns(block.transactions)).val // Re-gen transaction root with new transactions
 
     // Mine the block.
@@ -53,14 +55,14 @@ const mine = async ( pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB,
         .then(async B => {
             // If the block is not mined before, we will add it to our chain and broadcast this new block.
             if (!_res.mined) {
-                const __res = await work(B, chainInfo, blockDB, bhashDB, stateDB, 
+                await work(B, chainInfo, blockDB, bhashDB, stateDB, 
                     codeDB, storedAddresses, states, code, storage, _res.opened, EMPTY_HASH, fastify)
                 return _res // to-do >> build a detailed res object
             }
             _res.mined = false
             // Re-create the worker thread
-            // worker.kill()
-            // worker = fork(`${__dirname}/../../miner/worker.js`)
+            worker.kill()
+            worker = fork(`${__dirname}/../../miner/worker.js`)
         })
         .catch(err => fastify.log.error(err))
     return _res
