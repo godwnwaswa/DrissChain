@@ -6,9 +6,10 @@ const { fork } = require("child_process")
 const { BLOCK_GAS_LIMIT, EMPTY_HASH } = require("../config.json")
 const genesisBlock = require("../core/genesis")
 const rpc = require("../rpc/rpc")
+const { prodMsg } = require("./message")
 const TYPE = require("./message-types")
 const { parseJSON } = require("../utils/utils")
-let { opened , conn, connNodes, mined } = require("../config.json")
+let { opened, conn, connNodes, mined } = require("../config.json")
 let worker = fork(`${__dirname}/../miner/worker.js`) // Worker thread (for PoW mining).
 // Some chain info cache
 let chainInfo = {
@@ -44,28 +45,29 @@ const createTx = require("./types/create-tx")
 // Starts a Drisseum node at a specified WS address.
 
 const server = async (config, fastify) => {
-    const { 
-        PORT = 3000, RPC_PORT = 5000, 
-        PEERS = [], MAX_PEERS = 3, 
-        MY_ADDRESS = "ws://localhost:3000", 
-        ENABLE_MINING = false, ENABLE_LOGGING = false, 
-        ENABLE_RPC = false, PRIVATE_KEY = null, 
-        ENABLE_CHAIN_REQUEST = false 
+    const {
+        PORT = 3000, RPC_PORT = 5000,
+        PEERS = [], MAX_PEERS = 3,
+        MY_ADDRESS = "ws://localhost:3000",
+        ENABLE_MINING = false, ENABLE_LOGGING = false,
+        ENABLE_RPC = false, PRIVATE_KEY = null,
+        ENABLE_CHAIN_REQUEST = false
     } = config
 
-    const { pK , keyPair } = wallet(PRIVATE_KEY)
+    const { pK, keyPair } = wallet(PRIVATE_KEY)
     process.on("uncaughtException", err => fastify.log.error(err))
     await codeDB.put(EMPTY_HASH, "")
-    const server = new WS.Server({ port: PORT })
+    const wSocket = new WS.Server({ port: PORT })
     fastify.log.info(`WS server started on PORT ${PORT.toString()}`)
+
     let res = null
-    server.on("connection", async (socket, req) => {
+    wSocket.on("connection", async (socket, req) => {
         socket.on("message", async _msg => {
             const msg = parseJSON(_msg)
-            
+
             switch (msg.type) {
                 case TYPE.NEW_BLOCK:
-                    res = await newBlock( msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB, 
+                    res = await newBlock(msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB,
                         ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify)
                     opened = res.opened
                     currentSyncBlock = res.currentSyncBlock
@@ -73,7 +75,7 @@ const server = async (config, fastify) => {
                     chainInfo = res.chainInfo
                     break
                 case TYPE.CREATE_TRANSACTION:
-                    if (!ENABLE_CHAIN_REQUEST){
+                    if (!ENABLE_CHAIN_REQUEST) {
                         res = await createTx(msg, stateDB, chainInfo, fastify)
                     }
                     break
@@ -84,7 +86,7 @@ const server = async (config, fastify) => {
                     }
                     break
                 case TYPE.SEND_BLOCK:
-                    res = await sendBlock(msg, currentSyncBlock, chainInfo,stateDB, codeDB, blockDB, bhashDB, 
+                    res = await sendBlock(msg, currentSyncBlock, chainInfo, stateDB, codeDB, blockDB, bhashDB,
                         opened, MY_ADDRESS, ENABLE_CHAIN_REQUEST, fastify)
                     opened = res.opened
                     currentSyncBlock = res.currentSyncBlock
@@ -104,32 +106,43 @@ const server = async (config, fastify) => {
     }
 
     PEERS.forEach(peer => {
-       res = connect(MY_ADDRESS, peer, conn, opened, connNodes, fastify)
-       conn = res.conn
-       opened = res.opened
-       connNodes = res.connNodes
-       chainInfo = res.chainInfo
+        res = connect(MY_ADDRESS, peer, conn, opened, connNodes, fastify)
+        fastify.log.info(res)
+        conn = res.conn
+        opened = res.opened
+        connNodes = res.connNodes
     })
 
-    let currentSyncBlock = 1
-    if (ENABLE_CHAIN_REQUEST) {
-        res = await chainRequest(blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify)
-        opened = res.opened
-        currentSyncBlock = res.currentSyncBlock
-    }
+    // let currentSyncBlock = 1
+    // if (ENABLE_CHAIN_REQUEST) {
+    //     res = await chainRequest(blockDB, currentSyncBlock, stateDB, fastify )
+    //     currentSyncBlock = res.currentSyncBlock
 
-    if (ENABLE_MINING) {
-        res = loopMine(pK, BLOCK_GAS_LIMIT,EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo, 
-            worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify)
-        mined = res.mined
-        opened = res.opened
-    }
+    //     setTimeout(async () => {
+    //         for (const node of opened) {
+    //             // fastify.log.info(node.address)
+    //             node.socket.send(prodMsg(TYPE.REQUEST_BLOCK, {
+    //                 blockNumber: currentSyncBlock,
+    //                 requestAddress: MY_ADDRESS
+    //             }))
 
-    if (ENABLE_RPC){
-        const _sendTx = tx => sendTx(tx, opened, chainInfo, stateDB, fastify)
-        const main = rpc(RPC_PORT, {pK, mining: ENABLE_MINING}, _sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
-        main()
-    }
+    //             await new Promise(r => setTimeout(r, 5000))
+    //         }
+    //     }, 5000)
+    // }
+
+    // if (ENABLE_MINING) {
+    //     res = loopMine(pK, BLOCK_GAS_LIMIT, EMPTY_HASH, stateDB, blockDB, bhashDB, codeDB, chainInfo,
+    //         worker, mined, opened, ENABLE_CHAIN_REQUEST, fastify)
+    //     mined = res.mined
+    //     opened = res.opened
+    // }
+
+    // if (ENABLE_RPC) {
+    //     const _sendTx = tx => sendTx(tx, opened, chainInfo, stateDB, fastify)
+    //     const main = rpc(RPC_PORT, { pK, mining: ENABLE_MINING }, _sendTx, keyPair, stateDB, blockDB, bhashDB, codeDB)
+    //     main()
+    // }
 }
 
-module.exports = {server}
+module.exports = { server }
