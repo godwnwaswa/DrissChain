@@ -5,7 +5,6 @@ const { fork } = require("child_process")
 
 const newBlock = async (msg, chainInfo, currentSyncBlock, stateDB, codeDB, blockDB, bhashDB, 
     ENABLE_CHAIN_REQUEST, ENABLE_MINING, mined, opened, worker, fastify) => {
-        
     const nB = msg.data
     if (!chainInfo.checkedBlock[nB.hash]) { chainInfo.checkedBlock[nB.hash] = true }
     else { return }
