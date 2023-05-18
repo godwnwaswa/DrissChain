@@ -1,8 +1,7 @@
 const { EMPTY_HASH, INITIAL_SUPPLY, FIRST_ACCOUNT } = require("../../config.json")
-const { prodMsg } = require("../message")
-const TYPE = require("../message-types")
 
-const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRESS, fastify) => {
+const chainRequest = async (blockDB, currentSyncBlock, stateDB, fastify) => {
+    fastify.log.info('hit')
     const blockNumbers = await blockDB.keys().all()
     if (blockNumbers.length !== 0) {
         currentSyncBlock = Math.max(...blockNumbers.map(key => parseInt(key)))
@@ -15,20 +14,8 @@ const chainRequest = async (blockDB, currentSyncBlock, stateDB, opened, MY_ADDRE
             storageRoot: EMPTY_HASH 
         })
     }
-    setTimeout(async () => {
-        for (const node of opened) {
-            node.socket.send(prodMsg(TYPE.REQUEST_BLOCK, { 
-                blockNumber: currentSyncBlock, 
-                requestAddress: MY_ADDRESS 
-            }))
 
-            await new Promise(r => {
-                setTimeout(r, 5000)
-            })
-        }
-    }, 5000)
-
-    return { opened, currentSyncBlock }
+    return { currentSyncBlock }
 }
 
 
