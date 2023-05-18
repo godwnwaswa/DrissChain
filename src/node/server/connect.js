@@ -13,8 +13,10 @@ const connect = (MY_ADDRESS, address, conn, opened, connNodes, fastify) => {
         const socket = new WS(address)
         // Open a connection to the socket and send a handshake message to all conn nodes.
         socket.on("open", async () => {
-            for (const _address of [MY_ADDRESS, ...conn]) socket.send(prodMsg(TYPE.HANDSHAKE, _address))
-            for (const node of opened) node.socket.send(prodMsg(TYPE.HANDSHAKE, address))
+            const peers = [MY_ADDRESS, ...conn]
+            peers.forEach(peer => socket.send(prodMsg(TYPE.HANDSHAKE, peer)))
+            //opened.forEach(node => node.socket.send(prodMsg(TYPE.HANDSHAKE, address)))
+            fastify.log.info(`opened: ${opened}`)
 
             if (!opened.find(peer => peer.address === address) && address !== MY_ADDRESS) {
                 opened.push({ socket, address })
